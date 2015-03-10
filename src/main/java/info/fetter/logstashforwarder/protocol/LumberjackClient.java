@@ -158,6 +158,7 @@ public class LumberjackClient {
 	public int sendEvents(List<Event> eventList) throws IOException {
 		int beginSequence = sequence;
 		int numberOfEvents = eventList.size();
+		sendWindowSizeFrame(numberOfEvents);
 		List<Map<String,byte[]>> keyValuesList = new ArrayList<Map<String,byte[]>>(numberOfEvents);
 		for(Event event : eventList) {
 			keyValuesList.add(event.getKeyValues());
