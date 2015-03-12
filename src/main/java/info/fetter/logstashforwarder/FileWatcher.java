@@ -68,7 +68,7 @@ public class FileWatcher implements FileAlterationListener {
 
 	public void checkFiles() throws IOException {
 		logger.debug("Checking files");
-		printWatchMap();
+		//printWatchMap();
 		for(FileAlterationObserver observer : observerList) {
 			observer.checkAndNotify();
 		}
@@ -78,14 +78,17 @@ public class FileWatcher implements FileAlterationListener {
 	}
 
 	private void processModifications() throws IOException {
-		removeMarkedFilesFromWatchMap();
 
 		for(File file : changedWatchMap.keySet()) {
 			FileState state = changedWatchMap.get(file);
 			logger.trace("Checking file : " + file.getCanonicalPath());
+			logger.trace("-- Last modified : " + state.getLastModified());
+			logger.trace("-- Size : " + state.getSize());
+			logger.trace("-- Directory : " + state.getDirectory());
+			logger.trace("-- Filename : " + state.getFileName());
 
 			// Determine if file is still the same
-			logger.trace("Determine if file name has not changed");
+			logger.trace("Determine if file has just been written to");
 			FileState oldState = watchMap.get(file);
 			if(oldState != null) {
 				if(oldState.getSize() > state.getSize()) {
@@ -96,6 +99,7 @@ public class FileWatcher implements FileAlterationListener {
 						// File is the same
 						state.setOldFileState(oldState);
 						logger.trace("Same signature size and value : file is the same");
+						continue;
 					} else if(oldState.getSignatureLength() < state.getSignatureLength()){
 						// Compute the signature on the new file
 						long signature = FileSigner.computeSignature(state.getRandomAccessFile(), oldState.getSignatureLength());
@@ -103,6 +107,7 @@ public class FileWatcher implements FileAlterationListener {
 							// File is the same
 							state.setOldFileState(oldState);
 							logger.trace("Same signature : file is the same");
+							continue;
 						} else {
 							// File can't be the same
 							logger.trace("Signature different : file can't be the same");
@@ -114,36 +119,19 @@ public class FileWatcher implements FileAlterationListener {
 				}
 			}
 
-			// Determine if there was a file with the same size and last modification date in the same directory and with a different name
-			logger.trace("Determine if file has just been renamed");
+			// Determine if file has been renamed and/or written to
 			if(state.getOldFileState() == null) {
-				for(File otherFile : changedWatchMap.keySet()) {
+				logger.trace("Determine if file has been renamed and/or written to");
+				for(File otherFile : watchMap.keySet()) {
 					FileState otherState = watchMap.get(otherFile);
-					if(otherState != null
-							&& state.getLastModified() == otherState.getLastModified()
-							&& state.getSize() == otherState.getSize() 
-							&& state.getFilePath().equals(otherState.getFilePath())
-							&& ! state.getFileName().equals(otherState.getFileName())) {
-						logger.trace("Comparing to : " + otherFile.getCanonicalPath());
-						// Assume file has been renamed
-						state.setOldFileState(otherState);
-						logger.trace("Same directory, same size and last modification date : file has been renamed to : " + otherFile.getCanonicalPath());
-					}
-				}
-			}
-
-			// Determine if file has been renamed and appended
-			logger.trace("Determine if file has been renamed and appended");
-			if(state.getOldFileState() == null) {
-				for(File otherFile : changedWatchMap.keySet()) {
-					FileState otherState = watchMap.get(otherFile);
-					if(otherState != null && state.getSize() > otherState.getSize() && state.getFilePath().equals(otherState.getFilePath())) {
+					if(otherState != null && state.getSize() >= otherState.getSize() && state.getDirectory().equals(otherState.getDirectory())) {
 						logger.trace("Comparing to : " + otherFile.getCanonicalPath());
 						// File in the same directory which was smaller
 						if(otherState.getSignatureLength() == state.getSignatureLength() && otherState.getSignature() == state.getSignature()) {
 							// File is the same
 							state.setOldFileState(otherState);
 							logger.trace("Same signature size and value : file is the same");
+							break;
 						} else if(otherState.getSignatureLength() < state.getSignatureLength()){
 							// Compute the signature on the new file
 							long signature = FileSigner.computeSignature(state.getRandomAccessFile(), otherState.getSignatureLength());
@@ -151,6 +139,7 @@ public class FileWatcher implements FileAlterationListener {
 								// File is the same
 								state.setOldFileState(otherState);
 								logger.trace("Same signature : file is the same");
+								break;
 							} else {
 								// File can't be the same
 								logger.trace("Signature different : file can't be the same");
@@ -165,7 +154,7 @@ public class FileWatcher implements FileAlterationListener {
 		}
 
 		// Refresh file state
-		logger.trace("refreshing file state");
+		logger.trace("Refreshing file state");
 		for(File file : changedWatchMap.keySet()) {
 			logger.trace("Refreshing file : " + file.getCanonicalPath());
 			FileState state = changedWatchMap.get(file);
@@ -182,11 +171,15 @@ public class FileWatcher implements FileAlterationListener {
 		// Replacing old state
 		logger.trace("Replacing old state");
 		for(File file : changedWatchMap.keySet()) {
-			logger.trace("Replacing file : " + file.getCanonicalPath());
+			//logger.trace("Replacing file : " + file.getCanonicalPath());
 			FileState state = changedWatchMap.get(file);
 			watchMap.put(file, state);
 		}
 
+		// Truncating changedWatchMap
+		changedWatchMap.clear();
+		
+		removeMarkedFilesFromWatchMap();
 	}
 
 	private void watchFile(String fileToWatch) throws Exception {
@@ -272,7 +265,7 @@ public class FileWatcher implements FileAlterationListener {
 			logger.trace("WatchMap contents : ");
 			for(File file : watchMap.keySet()) {
 				FileState state = watchMap.get(file);
-				logger.trace("\tFile : " + state.getFilePath() + " marked for deletion : " + state.isDeleted());
+				logger.trace("\tFile : " + state.getDirectory() + " marked for deletion : " + state.isDeleted());
 			}
 		}
 	}
@@ -293,8 +286,16 @@ public class FileWatcher implements FileAlterationListener {
 			for(File file : markedList) {
 				FileState state = watchMap.remove(file);
 				state.getRandomAccessFile().close();
-				logger.trace("\tFile : " + state.getFilePath() + " removed");
+				logger.trace("\tFile : " + file.getCanonicalFile() + " removed");
 			}
+		}
+	}
+	
+	public void close() throws IOException {
+		logger.debug("Closing all files");
+		for(File file : watchMap.keySet()) {
+			FileState state = watchMap.get(file);
+			state.getRandomAccessFile().close();
 		}
 	}
 
@@ -317,4 +318,5 @@ public class FileWatcher implements FileAlterationListener {
 	public void onStop(FileAlterationObserver observer) {
 		// TODO Auto-generated method stub
 	}
+
 }

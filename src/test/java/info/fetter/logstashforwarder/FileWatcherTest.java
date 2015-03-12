@@ -47,20 +47,35 @@ public class FileWatcherTest {
 		File file3 = new File("test3.txt");
 		File file4 = new File("test4.txt");
 		
+		File testDir = new File("test");
+		//FileUtils.forceMkdir(new File("test"));
+		
 		watcher.checkFiles();
-		Thread.sleep(500);
-		FileUtils.write(file1, "line 1\n", true);
-		Thread.sleep(500);
+		Thread.sleep(100);
+		FileUtils.write(file1, "file 1 line 1\n", true);
+		Thread.sleep(100);
 		watcher.checkFiles();
-		FileUtils.forceDeleteOnExit(file1);
-//		FileUtils.touch(file2);
-//		Thread.sleep(500);
-//		watcher.checkFiles();
+		FileUtils.write(file1, "file 1 line 2\n", true);
+		FileUtils.write(file2, "file 2 line 1\n", true);
+		Thread.sleep(1000);
+		watcher.checkFiles();
+		FileUtils.moveFileToDirectory(file1, testDir, true);
+		FileUtils.write(file2, "file 2 line 2\n", true);
+		FileUtils.moveFile(file2, file1);
+		FileUtils.write(file2, "file 3 line 1\n", true);
 //		FileUtils.touch(file3);
 //		FileUtils.forceDelete(file1);
 //		FileUtils.forceDelete(file2);
-//		Thread.sleep(500);
-//		watcher.checkFiles();
+		Thread.sleep(1000);
+		watcher.checkFiles();
+		
+		
+		watcher.close();
+		FileUtils.forceDelete(file1);
+		FileUtils.forceDelete(file2);
+		FileUtils.forceDelete(testDir);
+		
+		
 //		FileUtils.moveFile(file3, file4);
 //		FileUtils.touch(file3);
 //		Thread.sleep(500);

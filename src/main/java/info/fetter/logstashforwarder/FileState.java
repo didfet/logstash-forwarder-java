@@ -23,7 +23,7 @@ import java.io.RandomAccessFile;
 
 public class FileState {
 	private File file;
-	private String filePath;
+	private String directory;
 	private long lastModified;
 	private long size;
 	private boolean deleted = false;
@@ -37,7 +37,7 @@ public class FileState {
 	
 	public FileState(File file) throws IOException {
 		this.file = file;
-		filePath = file.getCanonicalPath();
+		directory = file.getCanonicalFile().getParent();
 		fileName = file.getName();
 		randomAccessFile = new RandomAccessFile(file, "r");
 		lastModified = file.lastModified();
@@ -56,8 +56,8 @@ public class FileState {
 		return size;
 	}
 	
-	public String getFilePath() {
-		return filePath;
+	public String getDirectory() {
+		return directory;
 	}
 	
 	public boolean isDeleted() {
