@@ -19,19 +19,27 @@ package info.fetter.logstashforwarder;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 
 public class FileState {
 	private File file;
 	private String filePath;
 	private long lastModified;
 	private long size;
+	private boolean deleted = false;
+	private long signature;
+	private int signatureLength;
+	private boolean changed = false;
+	private RandomAccessFile randomAccessFile;
+	private long pointer = 0;
+	private FileState oldFileState;
+	private String fileName;
 	
 	public FileState(File file) throws IOException {
 		this.file = file;
 		filePath = file.getCanonicalPath();
-	}
-	
-	public void refresh() {
+		fileName = file.getName();
+		randomAccessFile = new RandomAccessFile(file, "r");
 		lastModified = file.lastModified();
 		size = file.length();
 	}
@@ -50,6 +58,62 @@ public class FileState {
 	
 	public String getFilePath() {
 		return filePath;
+	}
+	
+	public boolean isDeleted() {
+		return deleted;
+	}
+	
+	public void setDeleted() {
+		deleted = true;
+	}
+	
+	public boolean hasChanged() {
+		return changed;
+	}
+	
+	public void setChanged(boolean changed) {
+		this.changed = changed;
+	}
+
+	public long getSignature() {
+		return signature;
+	}
+
+	public void setSignature(long signature) {
+		this.signature = signature;
+	}
+
+	public RandomAccessFile getRandomAccessFile() {
+		return randomAccessFile;
+	}
+
+	public long getPointer() {
+		return pointer;
+	}
+	
+	public void setPointer(long pointer) {
+		this.pointer = pointer;
+	}
+
+	public int getSignatureLength() {
+		return signatureLength;
+	}
+
+	public void setSignatureLength(int signatureLength) {
+		this.signatureLength = signatureLength;
+	}
+
+	public FileState getOldFileState() {
+		return oldFileState;
+	}
+
+	public void setOldFileState(FileState oldFileState) {
+		this.oldFileState = oldFileState;
+	}
+
+	public String getFileName() {
+		return fileName;
 	}
 	
 }
