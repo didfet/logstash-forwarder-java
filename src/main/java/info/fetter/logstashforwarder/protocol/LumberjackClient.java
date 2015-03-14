@@ -18,6 +18,7 @@ package info.fetter.logstashforwarder.protocol;
  */
 
 import info.fetter.logstashforwarder.Event;
+import info.fetter.logstashforwarder.ProtocolAdapter;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -40,7 +41,7 @@ import javax.net.ssl.TrustManagerFactory;
 import org.apache.commons.io.HexDump;
 import org.apache.log4j.Logger;
 
-public class LumberjackClient {
+public class LumberjackClient implements ProtocolAdapter {
 	private final static Logger logger = Logger.getLogger(LumberjackClient.class);
 	private final static byte PROTOCOL_VERSION = 0x31;
 	private final static byte FRAME_ACK = 0x41;
