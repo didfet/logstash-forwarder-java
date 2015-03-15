@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 /*
  * Copyright 2015 Didier Fetter
  *
@@ -28,6 +30,7 @@ import java.util.Map;
  */
 
 public class FileReader {
+	private static Logger logger = Logger.getLogger(FileReader.class);
 	private static final int DEFAULT_SPOOL_SIZE = 1024;
 	private ProtocolAdapter adapter;
 	private int spoolSize = DEFAULT_SPOOL_SIZE;
@@ -49,6 +52,7 @@ public class FileReader {
 
 	public int readFiles(List<FileState> fileList) throws IOException {
 		int eventCount = 0;
+		logger.trace("Reading " + fileList.size() + " file(s)");
 		pointerMap = new HashMap<File,Long>(fileList.size(),1);
 		for(FileState state : fileList) {
 			eventCount += readFile(state, spoolSize - eventCount);
@@ -65,8 +69,8 @@ public class FileReader {
 		int eventListSizeBefore = eventList.size();
 		File file = state.getFile();
 		long pointer = state.getPointer();
-		RandomAccessFile reader = state.getRandomAccessFile();
-		reader.seek(pointer);
+		logger.trace("File : " + file.getCanonicalPath() + " pointer : " + pointer);
+		logger.trace("Space left in spool : " + spaceLeftInSpool);		
 		pointer = readLines(state, spaceLeftInSpool);
 		pointerMap.put(file, pointer);
 		return eventList.size() - eventListSizeBefore; // Return number of events read
@@ -75,11 +79,15 @@ public class FileReader {
 	private long readLines(FileState state, int spaceLeftInSpool) throws IOException {
 		RandomAccessFile reader = state.getRandomAccessFile();
 		long pos = reader.getFilePointer();
+		reader.seek(pos);
 		String line = readLine(reader);
 		while (line != null && spaceLeftInSpool > 0) {
+			logger.trace("-- Read line : " + line);
+			logger.trace("-- Space left in spool : " + spaceLeftInSpool);
 			pos = reader.getFilePointer();
 			addEvent(state, pos, line);
 			line = readLine(reader);
+			spaceLeftInSpool--;
 		}
 		reader.seek(pos); // Ensure we can re-read if necessary
 		return pos;
