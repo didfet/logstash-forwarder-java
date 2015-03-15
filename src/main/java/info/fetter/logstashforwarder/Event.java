@@ -23,12 +23,25 @@ import java.util.Map;
 public class Event {
 	private Map<String,byte[]> keyValues = new HashMap<String,byte[]>(10);
 	
+	public Event() {
+	}
+	
+	public Event(Event event) {
+		if(event != null) {
+			keyValues.putAll(event.keyValues);
+		}
+	}
+	
 	public void addField(String key, byte[] value) {
 		keyValues.put(key, value);
 	}
 	
 	public void addField(String key, String value) {
 		keyValues.put(key, value.getBytes());
+	}
+	
+	public void addField(String key, long value) {
+		keyValues.put(key, String.valueOf(value).getBytes());
 	}
 	
 	public Map<String,byte[]> getKeyValues() {

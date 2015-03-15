@@ -34,6 +34,7 @@ public class FileState {
 	private long pointer = 0;
 	private FileState oldFileState;
 	private String fileName;
+	private Event fields;
 	
 	public FileState(File file) throws IOException {
 		this.file = file;
@@ -114,6 +115,14 @@ public class FileState {
 
 	public String getFileName() {
 		return fileName;
+	}
+
+	public Event getFields() {
+		return fields;
+	}
+
+	public void setFields(Event fields) {
+		this.fields = fields;
 	}
 	
 }
