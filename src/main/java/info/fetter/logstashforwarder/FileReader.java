@@ -52,7 +52,9 @@ public class FileReader {
 
 	public int readFiles(List<FileState> fileList) throws IOException {
 		int eventCount = 0;
-		logger.trace("Reading " + fileList.size() + " file(s)");
+		if(logger.isTraceEnabled()) {
+			logger.trace("Reading " + fileList.size() + " file(s)");
+		}
 		pointerMap = new HashMap<File,Long>(fileList.size(),1);
 		for(FileState state : fileList) {
 			eventCount += readFile(state, spoolSize - eventCount);
@@ -69,8 +71,10 @@ public class FileReader {
 		int eventListSizeBefore = eventList.size();
 		File file = state.getFile();
 		long pointer = state.getPointer();
-		logger.trace("File : " + file.getCanonicalPath() + " pointer : " + pointer);
-		logger.trace("Space left in spool : " + spaceLeftInSpool);		
+		if(logger.isTraceEnabled()) {
+			logger.trace("File : " + file.getCanonicalPath() + " pointer : " + pointer);
+			logger.trace("Space left in spool : " + spaceLeftInSpool);
+		}
 		pointer = readLines(state, spaceLeftInSpool);
 		pointerMap.put(file, pointer);
 		return eventList.size() - eventListSizeBefore; // Return number of events read
@@ -82,8 +86,10 @@ public class FileReader {
 		reader.seek(pos);
 		String line = readLine(reader);
 		while (line != null && spaceLeftInSpool > 0) {
-			logger.trace("-- Read line : " + line);
-			logger.trace("-- Space left in spool : " + spaceLeftInSpool);
+			if(logger.isTraceEnabled()) {
+				logger.trace("-- Read line : " + line);
+				logger.trace("-- Space left in spool : " + spaceLeftInSpool);
+			}
 			pos = reader.getFilePointer();
 			addEvent(state, pos, line);
 			line = readLine(reader);
@@ -117,10 +123,10 @@ public class FileReader {
 
 	private void addEvent(FileState state, long pos, String line) throws IOException {
 		Event event = new Event(state.getFields());
-		event.addField("file", state.getFile().getCanonicalPath());
-		event.addField("offset", pos);
-		event.addField("line", line);
-		event.addField("host", hostname);
+		event.addField("file", state.getFile().getCanonicalPath())
+		.addField("offset", pos)
+		.addField("line", line)
+		.addField("host", hostname);
 		eventList.add(event);
 	}
 
