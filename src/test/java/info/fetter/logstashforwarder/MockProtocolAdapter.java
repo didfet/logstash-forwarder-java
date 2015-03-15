@@ -29,7 +29,7 @@ public class MockProtocolAdapter implements ProtocolAdapter {
 		for(Event event : eventList) {
 			logger.trace("Event :");
 			for(String key : event.getKeyValues().keySet()) {
-				logger.trace("-- " + key);
+				logger.trace("-- " + key  + ":" + new String(event.getKeyValues().get(key)));
 			}
 		}
 		return eventList.size();
