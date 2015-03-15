@@ -31,9 +31,8 @@ import org.apache.log4j.Logger;
 
 public class FileReader {
 	private static Logger logger = Logger.getLogger(FileReader.class);
-	private static final int DEFAULT_SPOOL_SIZE = 1024;
 	private ProtocolAdapter adapter;
-	private int spoolSize = DEFAULT_SPOOL_SIZE;
+	private int spoolSize = 0;
 	private List<Event> eventList;
 	private Map<File,Long> pointerMap;
 	private String hostname;
