@@ -30,7 +30,7 @@ public class FileWatcherTest {
 	//@Test
 	public void testFileWatch() throws InterruptedException, IOException {
 		FileWatcher watcher = new FileWatcher();
-		watcher.addFilesToWatch("./test.txt");
+		watcher.addFilesToWatch("./test.txt", new Event().addField("test", "test"));
 		for(int i = 0; i < 100; i++) {
 			Thread.sleep(1000);
 			watcher.checkFiles();
@@ -40,7 +40,7 @@ public class FileWatcherTest {
 	@Test
 	public void testWildcardWatch() throws InterruptedException, IOException {
 		FileWatcher watcher = new FileWatcher();
-		watcher.addFilesToWatch("./test*.txt");
+		watcher.addFilesToWatch("./test*.txt", new Event().addField("test", "test"));
 
 		File file1 = new File("test1.txt");
 		File file2 = new File("test2.txt");

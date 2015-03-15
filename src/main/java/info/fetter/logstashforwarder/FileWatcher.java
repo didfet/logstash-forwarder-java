@@ -31,11 +31,10 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.apache.commons.io.monitor.FileAlterationListener;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.apache.log4j.Logger;
 
-public class FileWatcher implements FileAlterationListener {
+public class FileWatcher {
 	private static final Logger logger = Logger.getLogger(FileWatcher.class);
 	private List<FileAlterationObserver> observerList = new ArrayList<FileAlterationObserver>();
 	private static final int ONE_DAY = 24 * 3600 * 1000;
@@ -52,14 +51,14 @@ public class FileWatcher implements FileAlterationListener {
 		this(ONE_DAY);
 	}
 
-	public void addFilesToWatch(String fileToWatch) {
+	public void addFilesToWatch(String fileToWatch, Event fields) {
 		try {
 			if(fileToWatch.equals("-")) {
-				addStdIn();
+				addStdIn(fields);
 			} else if(fileToWatch.contains("*")) {
-				addWildCardFiles(fileToWatch);
+				addWildCardFiles(fileToWatch, fields);
 			} else {
-				addSingleFile(fileToWatch);
+				addSingleFile(fileToWatch, fields);
 			}
 		} catch(Exception e) {
 			throw new RuntimeException(e);
@@ -175,7 +174,7 @@ public class FileWatcher implements FileAlterationListener {
 		removeMarkedFilesFromWatchMap();
 	}
 
-	private void addSingleFile(String fileToWatch) throws Exception {
+	private void addSingleFile(String fileToWatch, Event fields) throws Exception {
 		logger.info("Watching file : " + new File(fileToWatch).getCanonicalPath());
 		String directory = FilenameUtils.getFullPath(fileToWatch);
 		String fileName = FilenameUtils.getName(fileToWatch); 
@@ -183,10 +182,10 @@ public class FileWatcher implements FileAlterationListener {
 				FileFilterUtils.fileFileFilter(),
 				FileFilterUtils.nameFileFilter(fileName),
 				new LastModifiedFileFilter(deadTime));
-		initializeWatchMap(new File(directory), fileFilter);
+		initializeWatchMap(new File(directory), fileFilter, fields);
 	}
 
-	private void addWildCardFiles(String filesToWatch) throws Exception {
+	private void addWildCardFiles(String filesToWatch, Event fields) throws Exception {
 		logger.info("Watching wildcard files : " + filesToWatch);
 		String directory = FilenameUtils.getFullPath(filesToWatch);
 		String wildcard = FilenameUtils.getName(filesToWatch);
@@ -195,26 +194,28 @@ public class FileWatcher implements FileAlterationListener {
 				FileFilterUtils.fileFileFilter(),
 				new WildcardFileFilter(wildcard),
 				new LastModifiedFileFilter(deadTime));
-		initializeWatchMap(new File(directory), fileFilter);
+		initializeWatchMap(new File(directory), fileFilter, fields);
 	}
 
-	private void addStdIn() {
-		logger.info("Watching stdin : not implemented yet");
+	private void addStdIn(Event fields) {
+		logger.error("Watching stdin : not implemented yet");
 	}
 
-	private void initializeWatchMap(File directory, IOFileFilter fileFilter) throws Exception {
+	private void initializeWatchMap(File directory, IOFileFilter fileFilter, Event fields) throws Exception {
 		FileAlterationObserver observer = new FileAlterationObserver(directory, fileFilter);
-		observer.addListener(this);
+		FileModificationListener listener = new FileModificationListener(this, fields);
+		observer.addListener(listener);
 		observerList.add(observer);
 		observer.initialize();
 		for(File file : FileUtils.listFiles(directory, fileFilter, null)) {
-			addFileToWatchMap(watchMap, file);
+			addFileToWatchMap(watchMap, file, fields);
 		}
 	}
 
-	private void addFileToWatchMap(Map<File,FileState> map, File file) {
+	private void addFileToWatchMap(Map<File,FileState> map, File file, Event fields) {
 		try {
 			FileState state = new FileState(file);
+			state.setFields(fields);
 			int signatureLength = (int) (state.getSize() > MAX_SIGNATURE_LENGTH ? MAX_SIGNATURE_LENGTH : state.getSize());
 			state.setSignatureLength(signatureLength);
 			long signature = FileSigner.computeSignature(state.getRandomAccessFile(), signatureLength);
@@ -226,19 +227,19 @@ public class FileWatcher implements FileAlterationListener {
 		}
 	}
 
-	public void onFileChange(File file) {
+	public void onFileChange(File file, Event fields) {
 		try {
 			logger.debug("Change detected on file : " + file.getCanonicalPath());
-			addFileToWatchMap(changedWatchMap, file);
+			addFileToWatchMap(changedWatchMap, file, fields);
 		} catch (IOException e) {
 			logger.error("Caught IOException : " + e.getMessage());
 		}	
 	}
 
-	public void onFileCreate(File file) {
+	public void onFileCreate(File file, Event fields) {
 		try {
 			logger.debug("Create detected on file : " + file.getCanonicalPath());
-			addFileToWatchMap(changedWatchMap, file);
+			addFileToWatchMap(changedWatchMap, file, fields);
 		} catch (IOException e) {
 			logger.error("Caught IOException : " + e.getMessage());
 		}
@@ -290,26 +291,6 @@ public class FileWatcher implements FileAlterationListener {
 			FileState state = watchMap.get(file);
 			state.getRandomAccessFile().close();
 		}
-	}
-
-	public void onDirectoryChange(File directory) {
-		// Do nothing
-	}
-
-	public void onDirectoryCreate(File directory) {
-		// Do nothing
-	}
-
-	public void onDirectoryDelete(File directory) {
-		// Do nothing
-	}
-
-	public void onStart(FileAlterationObserver observer) {
-		// TODO Auto-generated method stub
-	}
-
-	public void onStop(FileAlterationObserver observer) {
-		// TODO Auto-generated method stub
 	}
 
 }

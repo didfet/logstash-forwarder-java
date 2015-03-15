@@ -32,16 +32,19 @@ public class Event {
 		}
 	}
 	
-	public void addField(String key, byte[] value) {
+	public Event addField(String key, byte[] value) {
 		keyValues.put(key, value);
+		return this;
 	}
 	
-	public void addField(String key, String value) {
+	public Event addField(String key, String value) {
 		keyValues.put(key, value.getBytes());
+		return this;
 	}
 	
-	public void addField(String key, long value) {
+	public Event addField(String key, long value) {
 		keyValues.put(key, String.valueOf(value).getBytes());
+		return this;
 	}
 	
 	public Map<String,byte[]> getKeyValues() {
