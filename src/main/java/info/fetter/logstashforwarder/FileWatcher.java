@@ -37,28 +37,19 @@ import org.apache.log4j.Logger;
 public class FileWatcher {
 	private static final Logger logger = Logger.getLogger(FileWatcher.class);
 	private List<FileAlterationObserver> observerList = new ArrayList<FileAlterationObserver>();
-	private static final int ONE_DAY = 24 * 3600 * 1000;
-	private long deadTime;
+	public static final int ONE_DAY = 24 * 3600 * 1000;
 	private Map<File,FileState> watchMap = new HashMap<File,FileState>();
 	private Map<File,FileState> changedWatchMap = new HashMap<File,FileState>();
 	private static int MAX_SIGNATURE_LENGTH = 1024;
 
-	public FileWatcher(long deadTime) {
-		this.deadTime = deadTime;
-	}
-
-	public FileWatcher() {
-		this(ONE_DAY);
-	}
-
-	public void addFilesToWatch(String fileToWatch, Event fields) {
+	public void addFilesToWatch(String fileToWatch, Event fields, int deadTime) {
 		try {
 			if(fileToWatch.equals("-")) {
 				addStdIn(fields);
 			} else if(fileToWatch.contains("*")) {
-				addWildCardFiles(fileToWatch, fields);
+				addWildCardFiles(fileToWatch, fields, deadTime);
 			} else {
-				addSingleFile(fileToWatch, fields);
+				addSingleFile(fileToWatch, fields, deadTime);
 			}
 		} catch(Exception e) {
 			throw new RuntimeException(e);
@@ -75,9 +66,10 @@ public class FileWatcher {
 		printWatchMap();
 	}
 	
-	public void readFiles() {
+	public void readFiles(FileReader reader) throws IOException {
 		logger.debug("Reading files");
 		logger.trace("==============");
+		reader.readFiles(watchMap.values());
 	}
 
 	private void processModifications() throws IOException {
@@ -174,7 +166,7 @@ public class FileWatcher {
 		removeMarkedFilesFromWatchMap();
 	}
 
-	private void addSingleFile(String fileToWatch, Event fields) throws Exception {
+	private void addSingleFile(String fileToWatch, Event fields, int deadTime) throws Exception {
 		logger.info("Watching file : " + new File(fileToWatch).getCanonicalPath());
 		String directory = FilenameUtils.getFullPath(fileToWatch);
 		String fileName = FilenameUtils.getName(fileToWatch); 
@@ -185,7 +177,7 @@ public class FileWatcher {
 		initializeWatchMap(new File(directory), fileFilter, fields);
 	}
 
-	private void addWildCardFiles(String filesToWatch, Event fields) throws Exception {
+	private void addWildCardFiles(String filesToWatch, Event fields, int deadTime) throws Exception {
 		logger.info("Watching wildcard files : " + filesToWatch);
 		String directory = FilenameUtils.getFullPath(filesToWatch);
 		String wildcard = FilenameUtils.getName(filesToWatch);

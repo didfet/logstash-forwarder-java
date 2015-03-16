@@ -6,6 +6,7 @@ import java.io.RandomAccessFile;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,7 @@ public class FileReader {
 		eventList = new ArrayList<Event>(spoolSize);
 	}
 
-	public int readFiles(List<FileState> fileList) throws IOException {
+	public int readFiles(Collection<FileState> fileList) throws IOException {
 		int eventCount = 0;
 		if(logger.isTraceEnabled()) {
 			logger.trace("Reading " + fileList.size() + " file(s)");

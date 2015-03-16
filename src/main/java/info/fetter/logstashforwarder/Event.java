@@ -32,6 +32,12 @@ public class Event {
 		}
 	}
 	
+	public Event(Map<String,String> fields) {
+		for(String key : fields.keySet()) {
+			addField(key, fields.get(key));
+		}
+	}
+	
 	public Event addField(String key, byte[] value) {
 		keyValues.put(key, value);
 		return this;

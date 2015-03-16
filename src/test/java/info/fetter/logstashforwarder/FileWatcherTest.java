@@ -1,5 +1,22 @@
 package info.fetter.logstashforwarder;
 
+/*
+ * Copyright 2015 Didier Fetter
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 import static org.apache.log4j.Level.*;
 
 import java.io.File;
@@ -30,7 +47,7 @@ public class FileWatcherTest {
 	//@Test
 	public void testFileWatch() throws InterruptedException, IOException {
 		FileWatcher watcher = new FileWatcher();
-		watcher.addFilesToWatch("./test.txt", new Event().addField("test", "test"));
+		watcher.addFilesToWatch("./test.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY);
 		for(int i = 0; i < 100; i++) {
 			Thread.sleep(1000);
 			watcher.checkFiles();
@@ -40,7 +57,7 @@ public class FileWatcherTest {
 	//@Test
 	public void testWildcardWatch() throws InterruptedException, IOException {
 		FileWatcher watcher = new FileWatcher();
-		watcher.addFilesToWatch("./test*.txt", new Event().addField("test", "test"));
+		watcher.addFilesToWatch("./test*.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY);
 
 		File file1 = new File("test1.txt");
 		File file2 = new File("test2.txt");
