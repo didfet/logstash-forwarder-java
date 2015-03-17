@@ -59,7 +59,9 @@ public class FileReader {
 		for(FileState state : fileList) {
 			eventCount += readFile(state, spoolSize - eventCount);
 		}
-		adapter.sendEvents(eventList);
+		if(eventCount > 0) {
+			adapter.sendEvents(eventList);
+		}
 		for(FileState state : fileList) {
 			state.setPointer(pointerMap.get(state.getFile()));
 		}
@@ -82,7 +84,7 @@ public class FileReader {
 
 	private long readLines(FileState state, int spaceLeftInSpool) throws IOException {
 		RandomAccessFile reader = state.getRandomAccessFile();
-		long pos = reader.getFilePointer();
+		long pos = state.getPointer();
 		reader.seek(pos);
 		String line = readLine(reader);
 		while (line != null && spaceLeftInSpool > 0) {
