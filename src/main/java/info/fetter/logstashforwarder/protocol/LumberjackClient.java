@@ -129,7 +129,7 @@ public class LumberjackClient implements ProtocolAdapter {
 		ByteArrayOutputStream uncompressedBytes = new ByteArrayOutputStream();
 		DataOutputStream uncompressedOutput = new DataOutputStream(uncompressedBytes);
 		for(Map<String,byte[]> keyValues : keyValuesList) {
-			logger.debug("Adding data frame");
+			logger.trace("Adding data frame");
 			sendDataFrame(uncompressedOutput, keyValues);
 		}
 		uncompressedOutput.close();

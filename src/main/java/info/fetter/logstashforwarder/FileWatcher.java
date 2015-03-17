@@ -66,10 +66,10 @@ public class FileWatcher {
 		printWatchMap();
 	}
 	
-	public void readFiles(FileReader reader) throws IOException {
+	public int readFiles(FileReader reader) throws IOException {
 		logger.debug("Reading files");
 		logger.trace("==============");
-		reader.readFiles(watchMap.values());
+		return reader.readFiles(watchMap.values());
 	}
 
 	private void processModifications() throws IOException {
@@ -194,6 +194,10 @@ public class FileWatcher {
 	}
 
 	private void initializeWatchMap(File directory, IOFileFilter fileFilter, Event fields) throws Exception {
+		if(!directory.isDirectory()) {
+			logger.warn("Directory " + directory + " does not exist");
+			return;
+		}
 		FileAlterationObserver observer = new FileAlterationObserver(directory, fileFilter);
 		FileModificationListener listener = new FileModificationListener(this, fields);
 		observer.addListener(listener);
@@ -246,12 +250,12 @@ public class FileWatcher {
 		}
 	}
 
-	private void printWatchMap() {
+	private void printWatchMap() throws IOException {
 		if(logger.isTraceEnabled()) {
 			logger.trace("WatchMap contents : ");
 			for(File file : watchMap.keySet()) {
 				FileState state = watchMap.get(file);
-				logger.trace("\tFile : " + state.getDirectory() + " marked for deletion : " + state.isDeleted());
+				logger.trace("\tFile : " + file.getCanonicalPath() + " marked for deletion : " + state.isDeleted());
 			}
 		}
 	}
