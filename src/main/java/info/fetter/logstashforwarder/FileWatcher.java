@@ -40,7 +40,16 @@ public class FileWatcher {
 	public static final int ONE_DAY = 24 * 3600 * 1000;
 	private Map<File,FileState> watchMap = new HashMap<File,FileState>();
 	private Map<File,FileState> changedWatchMap = new HashMap<File,FileState>();
+	private FileState[] savedStates;
 	private static int MAX_SIGNATURE_LENGTH = 1024;
+
+	public FileWatcher() {
+		try {
+			savedStates = Registrar.readStateFromJson();
+		} catch(Exception e) {
+			logger.warn("Could not load saved states : " + e.getMessage());
+		}
+	}
 
 	public void addFilesToWatch(String fileToWatch, Event fields, int deadTime) {
 		try {
@@ -65,11 +74,13 @@ public class FileWatcher {
 		processModifications();
 		printWatchMap();
 	}
-	
+
 	public int readFiles(FileReader reader) throws IOException {
 		logger.debug("Reading files");
 		logger.trace("==============");
-		return reader.readFiles(watchMap.values());
+		int numberOfLinesRead = reader.readFiles(watchMap.values());
+		Registrar.writeStateToJson(watchMap.values());
+		return numberOfLinesRead;
 	}
 
 	private void processModifications() throws IOException {
@@ -204,7 +215,46 @@ public class FileWatcher {
 		observerList.add(observer);
 		observer.initialize();
 		for(File file : FileUtils.listFiles(directory, fileFilter, null)) {
-			addFileToWatchMap(watchMap, file, fields);
+			FileState savedState = null;
+			if(savedStates != null) {
+				for(FileState state : savedStates) {
+					logger.trace("Comparing file : " + file + " with saved file : " + state.getFile());
+					if(file.equals(state.getFile())) {
+						savedState = state;
+						logger.debug("Match found with saved file " + state.getFile());
+					}
+				}
+			}
+			if(savedState == null) {
+				addFileToWatchMap(watchMap, file, fields);
+			} else {
+				addSavedFileToWatchMap(savedState, fields);
+			}
+		}
+	}
+
+	private void addSavedFileToWatchMap(FileState savedFileState, Event fields) {
+		try {
+			File file = savedFileState.getFile();
+			FileState state = new FileState(file);
+			state.setFields(fields);
+			int savedSignatureLength = savedFileState.getSignatureLength();
+			state.setSignatureLength(savedSignatureLength);
+			long savedSignature = savedFileState.getSignature();
+			int signatureLength = (int) (state.getSize() > MAX_SIGNATURE_LENGTH ? MAX_SIGNATURE_LENGTH : state.getSize());
+			long signature = FileSigner.computeSignature(state.getRandomAccessFile(), signatureLength);
+			if(signature == savedSignature) { 
+				state.setPointer(savedFileState.getPointer());
+				logger.debug("Restoring signature of size : " + savedSignatureLength + " on file : " + file + " : " + savedSignature);
+			} else {
+				logger.debug("File " + file + " signature has changed");
+				logger.trace("Setting signature of size : " + signatureLength + " on file : " + file + " : " + signature);
+			}
+			state.setSignatureLength(signatureLength);
+			state.setSignature(signature);
+			watchMap.put(file, state);
+		} catch (IOException e) {
+			logger.error("Caught IOException : " + e.getMessage());
 		}
 	}
 

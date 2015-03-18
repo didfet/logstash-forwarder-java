@@ -61,7 +61,7 @@ public class FileState {
 	}
 	
 	private void setFileFromDirectoryAndName() {
-		this.file = new File(directory + File.pathSeparator + fileName);
+		this.file = new File(directory + File.separator + fileName);
 	}
 
 	public File getFile() {

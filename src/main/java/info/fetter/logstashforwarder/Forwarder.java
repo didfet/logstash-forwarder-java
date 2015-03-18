@@ -42,7 +42,7 @@ public class Forwarder {
 	private static int idleTimeout = 5000;
 	private static String config;
 	private static ConfigurationManager configManager;
-	private static FileWatcher watcher = new FileWatcher();
+	private static FileWatcher watcher;
 	private static FileReader reader;
 	private static Level logLevel = INFO;
 	private static ProtocolAdapter adapter;
@@ -55,6 +55,7 @@ public class Forwarder {
 //			Logger.getLogger(FileReader.class).addAppender((Appender)RootLogger.getRootLogger().getAllAppenders().nextElement());
 //			Logger.getLogger(FileReader.class).setLevel(TRACE);
 //			Logger.getLogger(FileReader.class).setAdditivity(false);
+			watcher = new FileWatcher();
 			configManager = new ConfigurationManager(config);
 			configManager.readConfiguration();
 			for(FilesSection files : configManager.getConfig().getFiles()) {
