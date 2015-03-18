@@ -19,8 +19,12 @@ So logstash-forwarder-java is a solution for those who want a portable, lightwei
 
 ## How to install it ?
 
-For the moment the only way to install logstash-forwarder-java is to download the maven project and run maven build. Next step is to distribute the logstash-forwarder-java jar and the lib directory located in the maven target directory.
-I'll try to provide a tarball in the next releases.
+Download one of the following archives :
+  - [logstash-forwarder-java-0.1.0-bin.zip](https://github.com/didfet/logstash-forwarder-java/releases/download/0.1.0/logstash-forwarder-java-0.1.0-bin.zip)
+  - [logstash-forwarder-java-0.1.0-bin.tar.gz](https://github.com/didfet/logstash-forwarder-java/releases/download/0.1.0/logstash-forwarder-java-0.1.0-bin.tar.gz)
+  - [logstash-forwarder-java-0.1.0-bin.tar.bz2](https://github.com/didfet/logstash-forwarder-java/releases/download/0.1.0/logstash-forwarder-java-0.1.0-bin.tar.bz2)
+
+Or download the maven project and run maven package. Then you can install one of the archives located in the target directory.
 
 ## Differences with logstash-forwarder
 
