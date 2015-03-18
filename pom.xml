@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>logstash-forwarder-java</groupId>
 	<artifactId>logstash-forwarder-java</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.1.0</version>
 	<name>logstash-forwarder-java</name>
 	<description>Java version of logstash forwarder</description>
 	<url>https://github.com/didfet/logstash-forwarder-java</url>
@@ -76,10 +76,27 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.5.3</version>
+				<configuration>
+					<descriptor>src/assembly/tarball.xml</descriptor>
+				</configuration>
+				<executions>
+					<execution>
+						<id>create-archive</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 		<pluginManagement>
 			<plugins>
-				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
 					<artifactId>lifecycle-mapping</artifactId>
