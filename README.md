@@ -22,3 +22,25 @@ So logstash-forwarder-java is a solution for those who want a portable, lightwei
 For the moment the only way to install logstash-forwarder-java is to download the maven project and run maven build. Next step is to distribute the logstash-forwarder-java jar and the lib directory located in the maven target directory.
 I'll try to provide a tarball in the next releases.
 
+## Differences with logstash-forwarder
+
+### Configuration
+
+The configuration file is the same (json format), but there are a few differences :
+  - the ssl ca parameter points to a java keystore containing the root certificate of the server, not a PEM file
+  - the program only uses the first server in the network section for the moment
+  - comments are C-style comments
+
+### Command-line options
+
+Some options are the same :
+  - config (but only for a file, not a directory)
+  - quiet
+  - idle-timeout (renamed idletimeout)
+  - spool-size (renamed spoolsize)
+  - help
+
+There are a few more options :
+  - debug : turn on debug logging level
+  - trace : turn on trace logging level
+
