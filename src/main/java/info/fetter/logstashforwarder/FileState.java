@@ -21,20 +21,35 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class FileState {
+	@JsonIgnore
 	private File file;
 	private String directory;
+	private String fileName;
+	@JsonIgnore
 	private long lastModified;
+	@JsonIgnore
 	private long size;
+	@JsonIgnore
 	private boolean deleted = false;
 	private long signature;
 	private int signatureLength;
+	@JsonIgnore
 	private boolean changed = false;
+	@JsonIgnore
 	private RandomAccessFile randomAccessFile;
 	private long pointer = 0;
+	@JsonIgnore
 	private FileState oldFileState;
-	private String fileName;
+	@JsonIgnore
 	private Event fields;
+	
+	public FileState() {
+	}
 	
 	public FileState(File file) throws IOException {
 		this.file = file;
@@ -43,6 +58,10 @@ public class FileState {
 		randomAccessFile = new RandomAccessFile(file, "r");
 		lastModified = file.lastModified();
 		size = file.length();
+	}
+	
+	private void setFileFromDirectoryAndName() {
+		this.file = new File(directory + File.pathSeparator + fileName);
 	}
 
 	public File getFile() {
@@ -59,6 +78,24 @@ public class FileState {
 	
 	public String getDirectory() {
 		return directory;
+	}
+	
+	public void setDirectory(String directory) {
+		this.directory = directory;
+		if(fileName != null && directory != null) {
+			setFileFromDirectoryAndName();
+		}
+	}
+	
+	public String getFileName() {
+		return fileName;
+	}
+	
+	public void setFileName(String fileName) {
+		this.fileName = fileName;
+		if(fileName != null && directory != null) {
+			setFileFromDirectoryAndName();
+		}
 	}
 	
 	public boolean isDeleted() {
@@ -113,16 +150,23 @@ public class FileState {
 		this.oldFileState = oldFileState;
 	}
 
-	public String getFileName() {
-		return fileName;
-	}
-
 	public Event getFields() {
 		return fields;
 	}
 
 	public void setFields(Event fields) {
 		this.fields = fields;
+	}
+	
+	@Override
+	public String toString() {
+	     return new ToStringBuilder(this).
+	    	       append("fileName", fileName).
+	    	       append("directory", directory).
+	    	       append("pointer", pointer).
+	    	       append("signature", signature).
+	    	       append("signatureLength", signatureLength).
+	    	       toString();
 	}
 	
 }
