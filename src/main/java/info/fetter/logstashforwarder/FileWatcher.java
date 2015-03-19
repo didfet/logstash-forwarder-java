@@ -17,6 +17,7 @@ package info.fetter.logstashforwarder;
  *
  */
 
+import info.fetter.logstashforwarder.util.AdapterException;
 import info.fetter.logstashforwarder.util.LastModifiedFileFilter;
 
 import java.io.File;
@@ -75,7 +76,7 @@ public class FileWatcher {
 		printWatchMap();
 	}
 
-	public int readFiles(FileReader reader) throws IOException {
+	public int readFiles(FileReader reader) throws IOException, AdapterException {
 		logger.debug("Reading files");
 		logger.trace("==============");
 		int numberOfLinesRead = reader.readFiles(watchMap.values());

@@ -1,5 +1,7 @@
 package info.fetter.logstashforwarder;
 
+import info.fetter.logstashforwarder.util.AdapterException;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -50,7 +52,7 @@ public class FileReader {
 		eventList = new ArrayList<Event>(spoolSize);
 	}
 
-	public int readFiles(Collection<FileState> fileList) throws IOException {
+	public int readFiles(Collection<FileState> fileList) throws IOException, AdapterException {
 		int eventCount = 0;
 		if(logger.isTraceEnabled()) {
 			logger.trace("Reading " + fileList.size() + " file(s)");

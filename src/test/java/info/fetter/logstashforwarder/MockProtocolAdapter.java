@@ -17,7 +17,6 @@ package info.fetter.logstashforwarder;
  *
  */
 
-import java.io.IOException;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -25,7 +24,7 @@ import org.apache.log4j.Logger;
 public class MockProtocolAdapter implements ProtocolAdapter {
 	private static Logger logger = Logger.getLogger(MockProtocolAdapter.class);
 
-	public int sendEvents(List<Event> eventList) throws IOException {
+	public int sendEvents(List<Event> eventList) {
 		for(Event event : eventList) {
 			logger.trace("Event :");
 			for(String key : event.getKeyValues().keySet()) {
@@ -35,7 +34,7 @@ public class MockProtocolAdapter implements ProtocolAdapter {
 		return eventList.size();
 	}
 
-	public void close() throws IOException {
+	public void close() {
 		// not implemented
 	}
 

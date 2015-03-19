@@ -17,10 +17,11 @@ package info.fetter.logstashforwarder;
  *
  */
 
-import java.io.IOException;
+import info.fetter.logstashforwarder.util.AdapterException;
+
 import java.util.List;
 
 public interface ProtocolAdapter {
-	public int sendEvents(List<Event> eventList) throws IOException;
-	public void close() throws IOException;
+	public int sendEvents(List<Event> eventList) throws AdapterException;
+	public void close() throws AdapterException;
 }

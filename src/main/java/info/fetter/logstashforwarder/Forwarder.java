@@ -7,6 +7,7 @@ import java.io.IOException;
 import info.fetter.logstashforwarder.config.ConfigurationManager;
 import info.fetter.logstashforwarder.config.FilesSection;
 import info.fetter.logstashforwarder.protocol.LumberjackClient;
+import info.fetter.logstashforwarder.util.AdapterException;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -18,6 +19,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.log4j.spi.RootLogger;
 
 /*
@@ -38,6 +40,7 @@ import org.apache.log4j.spi.RootLogger;
  */
 
 public class Forwarder {
+	private static Logger logger = Logger.getLogger(Forwarder.class);
 	private static int spoolSize = 1024;
 	private static int idleTimeout = 5000;
 	private static String config;
@@ -52,9 +55,9 @@ public class Forwarder {
 			parseOptions(args);
 			BasicConfigurator.configure();
 			RootLogger.getRootLogger().setLevel(logLevel);
-//			Logger.getLogger(FileReader.class).addAppender((Appender)RootLogger.getRootLogger().getAllAppenders().nextElement());
-//			Logger.getLogger(FileReader.class).setLevel(TRACE);
-//			Logger.getLogger(FileReader.class).setAdditivity(false);
+			//			Logger.getLogger(FileReader.class).addAppender((Appender)RootLogger.getRootLogger().getAllAppenders().nextElement());
+			//			Logger.getLogger(FileReader.class).setLevel(TRACE);
+			//			Logger.getLogger(FileReader.class).setAdditivity(false);
 			watcher = new FileWatcher();
 			configManager = new ConfigurationManager(config);
 			configManager.readConfiguration();
@@ -64,9 +67,7 @@ public class Forwarder {
 				}
 			}
 			reader = new FileReader(spoolSize);
-			String[] serverAndPort = configManager.getConfig().getNetwork().getServers().get(0).split(":");
-			adapter = new LumberjackClient(configManager.getConfig().getNetwork().getSslCA(),serverAndPort[0],Integer.parseInt(serverAndPort[1]));
-			reader.setAdapter(adapter);
+			connectToServer();
 			infiniteLoop();
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -76,10 +77,26 @@ public class Forwarder {
 
 	private static void infiniteLoop() throws IOException, InterruptedException {
 		while(true) {
-			watcher.checkFiles();
-			while(watcher.readFiles(reader) == spoolSize);
-			Thread.sleep(idleTimeout);
+			try {
+				watcher.checkFiles();
+				while(watcher.readFiles(reader) == spoolSize);
+				Thread.sleep(idleTimeout);
+			} catch(AdapterException e) {
+				try {
+					logger.error("Lost server connection");
+					Thread.sleep(configManager.getConfig().getNetwork().getTimeout() * 1000);
+					connectToServer();
+				} catch(Exception ex) {
+					logger.error("Failed to reconnect to server : " + ex.getMessage());
+				}
+			}
 		}
+	}
+	
+	private static void connectToServer() throws NumberFormatException, IOException {
+		String[] serverAndPort = configManager.getConfig().getNetwork().getServers().get(0).split(":");
+		adapter = new LumberjackClient(configManager.getConfig().getNetwork().getSslCA(),serverAndPort[0],Integer.parseInt(serverAndPort[1]));
+		reader.setAdapter(adapter);
 	}
 
 	@SuppressWarnings("static-access")

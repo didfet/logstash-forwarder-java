@@ -18,6 +18,7 @@ package info.fetter.logstashforwarder;
  */
 
 import static org.apache.log4j.Level.*;
+import info.fetter.logstashforwarder.util.AdapterException;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,7 +48,7 @@ public class FileReaderTest {
 	}
 
 	@Test
-	public void testFileReader1() throws IOException, InterruptedException {
+	public void testFileReader1() throws IOException, InterruptedException, AdapterException {
 		FileReader reader = new FileReader(2);
 		reader.setAdapter(new MockProtocolAdapter());
 		List<FileState> fileList = new ArrayList<FileState>(1);

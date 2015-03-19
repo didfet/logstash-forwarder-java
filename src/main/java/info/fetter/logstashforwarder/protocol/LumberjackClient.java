@@ -19,6 +19,7 @@ package info.fetter.logstashforwarder.protocol;
 
 import info.fetter.logstashforwarder.Event;
 import info.fetter.logstashforwarder.ProtocolAdapter;
+import info.fetter.logstashforwarder.util.AdapterException;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -78,7 +79,7 @@ public class LumberjackClient implements ProtocolAdapter {
 
 			output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
 			input = new DataInputStream(socket.getInputStream());
-			
+
 			logger.info("Connected to " + server + ":" + port);
 		} catch(IOException e) {
 			throw e;
@@ -154,11 +155,11 @@ public class LumberjackClient implements ProtocolAdapter {
 		if(logger.isTraceEnabled()) {
 			HexDump.dump(compressedData, 0, System.out, 0);
 		}
-		
+
 		output.writeInt(compressor.getTotalOut());
 		output.write(compressedData);
 		output.flush();
-		
+
 		logger.debug("Sending compressed frame : " + keyValuesList.size() + " frames");
 		return 6 + compressor.getTotalOut();
 	}
@@ -177,22 +178,30 @@ public class LumberjackClient implements ProtocolAdapter {
 		return sequenceNumber;
 	}
 
-	public int sendEvents(List<Event> eventList) throws IOException {
-		int beginSequence = sequence;
-		int numberOfEvents = eventList.size();
-		logger.info("Sending " + numberOfEvents + " events");
-		sendWindowSizeFrame(numberOfEvents);
-		List<Map<String,byte[]>> keyValuesList = new ArrayList<Map<String,byte[]>>(numberOfEvents);
-		for(Event event : eventList) {
-			keyValuesList.add(event.getKeyValues());
+	public int sendEvents(List<Event> eventList) throws AdapterException {
+		try {
+			int beginSequence = sequence;
+			int numberOfEvents = eventList.size();
+			logger.info("Sending " + numberOfEvents + " events");
+			sendWindowSizeFrame(numberOfEvents);
+			List<Map<String,byte[]>> keyValuesList = new ArrayList<Map<String,byte[]>>(numberOfEvents);
+			for(Event event : eventList) {
+				keyValuesList.add(event.getKeyValues());
+			}
+			sendCompressedFrame(keyValuesList);
+			while(readAckFrame() < (sequence - 1) ) {}
+			return sequence - beginSequence;
+		} catch(Exception e) {
+			throw new AdapterException(e);
 		}
-		sendCompressedFrame(keyValuesList);
-		while(readAckFrame() < (sequence - 1) ) {}
-		return sequence - beginSequence;
 	}
 
-	public void close() throws IOException {
-		socket.close();
+	public void close() throws AdapterException {
+		try {
+			socket.close();
+		} catch(Exception e) {
+			throw new AdapterException(e);
+		}
 		logger.info("Connection to " + server + ":" + port + " closed");
 	}
 }
