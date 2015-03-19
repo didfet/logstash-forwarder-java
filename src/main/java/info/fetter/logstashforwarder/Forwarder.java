@@ -3,6 +3,8 @@ package info.fetter.logstashforwarder;
 import static org.apache.log4j.Level.*;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Random;
 
 import info.fetter.logstashforwarder.config.ConfigurationManager;
 import info.fetter.logstashforwarder.config.FilesSection;
@@ -49,6 +51,7 @@ public class Forwarder {
 	private static FileReader reader;
 	private static Level logLevel = INFO;
 	private static ProtocolAdapter adapter;
+	private static Random random = new Random();
 
 	public static void main(String[] args) {
 		try {
@@ -82,21 +85,26 @@ public class Forwarder {
 				while(watcher.readFiles(reader) == spoolSize);
 				Thread.sleep(idleTimeout);
 			} catch(AdapterException e) {
-				try {
-					logger.error("Lost server connection");
-					Thread.sleep(configManager.getConfig().getNetwork().getTimeout() * 1000);
-					connectToServer();
-				} catch(Exception ex) {
-					logger.error("Failed to reconnect to server : " + ex.getMessage());
-				}
+				logger.error("Lost server connection");
+				Thread.sleep(configManager.getConfig().getNetwork().getTimeout() * 1000);
+				connectToServer();
 			}
 		}
 	}
-	
-	private static void connectToServer() throws NumberFormatException, IOException {
-		String[] serverAndPort = configManager.getConfig().getNetwork().getServers().get(0).split(":");
-		adapter = new LumberjackClient(configManager.getConfig().getNetwork().getSslCA(),serverAndPort[0],Integer.parseInt(serverAndPort[1]));
-		reader.setAdapter(adapter);
+
+	private static void connectToServer() {
+		int randomServerIndex = 0;
+		List<String> serverList = configManager.getConfig().getNetwork().getServers();
+		while(adapter == null) {
+			try {
+				randomServerIndex = random.nextInt(serverList.size());
+				String[] serverAndPort = serverList.get(randomServerIndex).split(":");
+				adapter = new LumberjackClient(configManager.getConfig().getNetwork().getSslCA(),serverAndPort[0],Integer.parseInt(serverAndPort[1]));
+				reader.setAdapter(adapter);
+			} catch(Exception ex) {
+				logger.error("Failed to connect to server " + serverList.get(randomServerIndex) + " : " + ex.getMessage());
+			}
+		}
 	}
 
 	@SuppressWarnings("static-access")
