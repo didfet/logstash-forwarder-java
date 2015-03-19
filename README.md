@@ -57,4 +57,5 @@ Some options are the same :
 There are a few more options :
   - debug : turn on debug logging level
   - trace : turn on trace logging level
+  - signaturelength : size of the block used to compute the checksum
 
