@@ -32,6 +32,10 @@ Just run this command :
 
     java -jar logstash-forwarder-java-X.Y.Z.jar -config /path/to/config/file.json
 
+For help run :
+
+    java -jar logstash-forwarder-java-X.Y.Z.jar -help
+
 ## Differences with logstash-forwarder
 
 ### Configuration
