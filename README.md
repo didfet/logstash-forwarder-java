@@ -26,6 +26,12 @@ Download one of the following archives :
 
 Or download the maven project and run maven package. Then you can install one of the archives located in the target directory.
 
+## How to run it ?
+
+Just run this command :
+
+    java -jar logstash-forwarder-java-X.Y.Z.jar -config /path/to/config/file.json
+
 ## Differences with logstash-forwarder
 
 ### Configuration
