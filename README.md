@@ -5,7 +5,7 @@
 Logstash-forwarder-java is a log shipper program written in java. This is in fact a java version of [logstash-forwarder](https://github.com/elasticsearch/logstash-forwarder) by jordansissel.
 Here are a few features of this program :
   - compatible with Java 5 runtime
-  - lightweight : requires only a few dependencies and few system resources
+  - lightweight : package size is ~2Mb
   - configuration compatible with logstash-forwarder
   - lumberjack output (including zlib compression)
 
