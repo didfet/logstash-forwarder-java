@@ -33,6 +33,7 @@ Or download the maven project and run maven package. Then you can install one of
 The configuration file is the same (json format), but there are a few differences :
   - the ssl ca parameter points to a java keystore containing the root certificate of the server, not a PEM file
   - comments are C-style comments
+  - the stdin input is not yet implemented
 
 ### Command-line options
 
