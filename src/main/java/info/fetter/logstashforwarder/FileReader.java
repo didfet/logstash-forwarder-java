@@ -52,7 +52,7 @@ public class FileReader {
 		eventList = new ArrayList<Event>(spoolSize);
 	}
 
-	public int readFiles(Collection<FileState> fileList) throws IOException, AdapterException {
+	public int readFiles(Collection<FileState> fileList) throws AdapterException {
 		int eventCount = 0;
 		if(logger.isTraceEnabled()) {
 			logger.trace("Reading " + fileList.size() + " file(s)");
@@ -71,12 +71,12 @@ public class FileReader {
 		return eventCount; // Return number of events sent to adapter
 	}
 
-	private int readFile(FileState state, int spaceLeftInSpool) throws IOException {
+	private int readFile(FileState state, int spaceLeftInSpool) {
 		int eventListSizeBefore = eventList.size();
 		File file = state.getFile();
 		long pointer = state.getPointer();
 		if(logger.isTraceEnabled()) {
-			logger.trace("File : " + file.getCanonicalPath() + " pointer : " + pointer);
+			logger.trace("File : " + file + " pointer : " + pointer);
 			logger.trace("Space left in spool : " + spaceLeftInSpool);
 		}
 		pointer = readLines(state, spaceLeftInSpool);
@@ -84,22 +84,27 @@ public class FileReader {
 		return eventList.size() - eventListSizeBefore; // Return number of events read
 	}
 
-	private long readLines(FileState state, int spaceLeftInSpool) throws IOException {
+	private long readLines(FileState state, int spaceLeftInSpool) {
 		RandomAccessFile reader = state.getRandomAccessFile();
 		long pos = state.getPointer();
-		reader.seek(pos);
-		String line = readLine(reader);
-		while (line != null && spaceLeftInSpool > 0) {
-			if(logger.isTraceEnabled()) {
-				logger.trace("-- Read line : " + line);
-				logger.trace("-- Space left in spool : " + spaceLeftInSpool);
+		try {
+			reader.seek(pos);
+			String line = readLine(reader);
+			while (line != null && spaceLeftInSpool > 0) {
+				if(logger.isTraceEnabled()) {
+					logger.trace("-- Read line : " + line);
+					logger.trace("-- Space left in spool : " + spaceLeftInSpool);
+				}
+				pos = reader.getFilePointer();
+				addEvent(state, pos, line);
+				line = readLine(reader);
+				spaceLeftInSpool--;
 			}
-			pos = reader.getFilePointer();
-			addEvent(state, pos, line);
-			line = readLine(reader);
-			spaceLeftInSpool--;
+			reader.seek(pos); // Ensure we can re-read if necessary
+		} catch(IOException e) {
+			logger.warn("Exception raised while reading file : " + state.getFile());
+			e.printStackTrace();
 		}
-		reader.seek(pos); // Ensure we can re-read if necessary
 		return pos;
 	}
 

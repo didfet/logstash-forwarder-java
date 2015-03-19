@@ -52,6 +52,7 @@ public class Forwarder {
 	private static Level logLevel = INFO;
 	private static ProtocolAdapter adapter;
 	private static Random random = new Random();
+	private static int signatureLength = 4096;
 
 	public static void main(String[] args) {
 		try {
@@ -62,6 +63,7 @@ public class Forwarder {
 			//			Logger.getLogger(FileReader.class).setLevel(TRACE);
 			//			Logger.getLogger(FileReader.class).setAdditivity(false);
 			watcher = new FileWatcher();
+			watcher.setMaxSignatureLength(signatureLength);
 			configManager = new ConfigurationManager(config);
 			configManager.readConfiguration();
 			for(FilesSection files : configManager.getConfig().getFiles()) {
@@ -69,6 +71,7 @@ public class Forwarder {
 					watcher.addFilesToWatch(path, new Event(files.getFields()), FileWatcher.ONE_DAY);
 				}
 			}
+			watcher.initialize();
 			reader = new FileReader(spoolSize);
 			connectToServer();
 			infiniteLoop();
@@ -128,6 +131,10 @@ public class Forwarder {
 				.isRequired()
 				.withDescription("path to logstash-forwarder configuration file")
 				.create("config");
+		Option signatureLengthOption = OptionBuilder.withArgName("signature length")
+				.hasArg()
+				.withDescription("Maximum length of file signature")
+				.create("signaturelength");
 
 		options.addOption(helpOption)
 		.addOption(idleTimeoutOption)
@@ -135,6 +142,7 @@ public class Forwarder {
 		.addOption(quiet)
 		.addOption(debug)
 		.addOption(trace)
+		.addOption(signatureLengthOption)
 		.addOption(configOption);	
 		CommandLineParser parser = new GnuParser();
 		try {
@@ -147,6 +155,9 @@ public class Forwarder {
 			}
 			if(line.hasOption("config")) {
 				config = line.getOptionValue("config");
+			}
+			if(line.hasOption("signaturelength")) {
+				signatureLength = Integer.parseInt(line.getOptionValue("signaturelength"));
 			}
 			if(line.hasOption("quiet")) {
 				logLevel = ERROR;

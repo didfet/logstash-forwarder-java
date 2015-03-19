@@ -54,17 +54,18 @@ public class FileWatcherTest {
 		}
 	}
 	
-	//@Test
+	@Test
 	public void testWildcardWatch() throws InterruptedException, IOException {
 		FileWatcher watcher = new FileWatcher();
-		watcher.addFilesToWatch("./test*.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY);
+		watcher.addFilesToWatch("./testFileWatcher*.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY);
+		watcher.initialize();
 
-		File file1 = new File("test1.txt");
-		File file2 = new File("test2.txt");
+		File file1 = new File("testFileWatcher1.txt");
+		File file2 = new File("testFileWatcher2.txt");
 		//File file3 = new File("test3.txt");
 		//File file4 = new File("test4.txt");
 		
-		File testDir = new File("test");
+		//File testDir = new File("testFileWatcher");
 		//FileUtils.forceMkdir(new File("test"));
 		
 		watcher.checkFiles();
@@ -76,29 +77,22 @@ public class FileWatcherTest {
 		FileUtils.write(file2, "file 2 line 1\n", true);
 		Thread.sleep(1000);
 		watcher.checkFiles();
-		FileUtils.moveFileToDirectory(file1, testDir, true);
-		FileUtils.write(file2, "file 2 line 2\n", true);
-		FileUtils.moveFile(file2, file1);
-		FileUtils.write(file2, "file 3 line 1\n", true);
-//		FileUtils.touch(file3);
+//		FileUtils.moveFileToDirectory(file1, testDir, true);
+//		FileUtils.write(file2, "file 2 line 2\n", true);
+//		FileUtils.moveFile(file2, file1);
+//		FileUtils.write(file2, "file 3 line 1\n", true);
+//
+//		Thread.sleep(1000);
+//		watcher.checkFiles();
+//		
+//		
+//		watcher.close();
 //		FileUtils.forceDelete(file1);
 //		FileUtils.forceDelete(file2);
-		Thread.sleep(1000);
-		watcher.checkFiles();
+//		FileUtils.forceDelete(testDir);
 		
 		
-		watcher.close();
-		FileUtils.forceDelete(file1);
-		FileUtils.forceDelete(file2);
-		FileUtils.forceDelete(testDir);
-		
-		
-//		FileUtils.moveFile(file3, file4);
-//		FileUtils.touch(file3);
-//		Thread.sleep(500);
-//		watcher.checkFiles();
-//		FileUtils.forceDelete(file3);
-//		FileUtils.forceDelete(file4);
+
 	}
 	
 	@Test

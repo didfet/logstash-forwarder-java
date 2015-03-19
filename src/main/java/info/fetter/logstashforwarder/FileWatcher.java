@@ -39,10 +39,10 @@ public class FileWatcher {
 	private static final Logger logger = Logger.getLogger(FileWatcher.class);
 	private List<FileAlterationObserver> observerList = new ArrayList<FileAlterationObserver>();
 	public static final int ONE_DAY = 24 * 3600 * 1000;
-	private Map<File,FileState> watchMap = new HashMap<File,FileState>();
-	private Map<File,FileState> changedWatchMap = new HashMap<File,FileState>();
+	private Map<File,FileState> oldWatchMap = new HashMap<File,FileState>();
+	private Map<File,FileState> newWatchMap = new HashMap<File,FileState>();
 	private FileState[] savedStates;
-	private static int MAX_SIGNATURE_LENGTH = 1024;
+	private int maxSignatureLength;
 
 	public FileWatcher() {
 		try {
@@ -50,6 +50,17 @@ public class FileWatcher {
 		} catch(Exception e) {
 			logger.warn("Could not load saved states : " + e.getMessage());
 		}
+	}
+
+	public void initialize() throws IOException {
+		logger.debug("Initializing FileWatcher");
+		if(savedStates != null) {
+			for(FileState state : savedStates) {
+				oldWatchMap.put(state.getFile(), state);
+			}
+		}
+		processModifications();
+		printWatchMap();
 	}
 
 	public void addFilesToWatch(String fileToWatch, Event fields, int deadTime) {
@@ -79,15 +90,15 @@ public class FileWatcher {
 	public int readFiles(FileReader reader) throws IOException, AdapterException {
 		logger.debug("Reading files");
 		logger.trace("==============");
-		int numberOfLinesRead = reader.readFiles(watchMap.values());
-		Registrar.writeStateToJson(watchMap.values());
+		int numberOfLinesRead = reader.readFiles(oldWatchMap.values());
+		Registrar.writeStateToJson(oldWatchMap.values());
 		return numberOfLinesRead;
 	}
 
 	private void processModifications() throws IOException {
 
-		for(File file : changedWatchMap.keySet()) {
-			FileState state = changedWatchMap.get(file);
+		for(File file : newWatchMap.keySet()) {
+			FileState state = newWatchMap.get(file);
 			if(logger.isTraceEnabled()) {
 				logger.trace("Checking file : " + file.getCanonicalPath());
 				logger.trace("-- Last modified : " + state.getLastModified());
@@ -97,7 +108,7 @@ public class FileWatcher {
 			}
 
 			logger.trace("Determine if file has just been written to");
-			FileState oldState = watchMap.get(file);
+			FileState oldState = oldWatchMap.get(file);
 			if(oldState != null) {
 				if(oldState.getSize() > state.getSize()) {
 					logger.trace("File shorter : file can't be the same");
@@ -123,8 +134,8 @@ public class FileWatcher {
 
 			if(state.getOldFileState() == null) {
 				logger.trace("Determine if file has been renamed and/or written to");
-				for(File otherFile : watchMap.keySet()) {
-					FileState otherState = watchMap.get(otherFile);
+				for(File otherFile : oldWatchMap.keySet()) {
+					FileState otherState = oldWatchMap.get(otherFile);
 					if(otherState != null && state.getSize() >= otherState.getSize() && state.getDirectory().equals(otherState.getDirectory())) {
 						if(logger.isTraceEnabled()) {
 							logger.trace("Comparing to : " + otherFile.getCanonicalPath());
@@ -151,29 +162,31 @@ public class FileWatcher {
 		}
 
 		logger.trace("Refreshing file state");
-		for(File file : changedWatchMap.keySet()) {
+		for(File file : newWatchMap.keySet()) {
 			if(logger.isTraceEnabled()) {
 				logger.trace("Refreshing file : " + file.getCanonicalPath());
 			}
-			FileState state = changedWatchMap.get(file);
+			FileState state = newWatchMap.get(file);
 			FileState oldState = state.getOldFileState();
 			if(oldState == null) {
 				logger.trace("File has been truncated or created, not retrieving pointer");
 			} else {
 				logger.trace("File has not been truncated or created, retrieving pointer");
 				state.setPointer(oldState.getPointer());
-				oldState.getRandomAccessFile().close();
+				try {
+					oldState.getRandomAccessFile().close();
+				} catch(Exception e) {}
 			}
 		}
 
 		logger.trace("Replacing old state");
-		for(File file : changedWatchMap.keySet()) {
-			FileState state = changedWatchMap.get(file);
-			watchMap.put(file, state);
+		for(File file : newWatchMap.keySet()) {
+			FileState state = newWatchMap.get(file);
+			oldWatchMap.put(file, state);
 		}
 
 		// Truncating changedWatchMap
-		changedWatchMap.clear();
+		newWatchMap.clear();
 
 		removeMarkedFilesFromWatchMap();
 	}
@@ -216,46 +229,7 @@ public class FileWatcher {
 		observerList.add(observer);
 		observer.initialize();
 		for(File file : FileUtils.listFiles(directory, fileFilter, null)) {
-			FileState savedState = null;
-			if(savedStates != null) {
-				for(FileState state : savedStates) {
-					logger.trace("Comparing file : " + file + " with saved file : " + state.getFile());
-					if(file.equals(state.getFile())) {
-						savedState = state;
-						logger.debug("Match found with saved file " + state.getFile());
-					}
-				}
-			}
-			if(savedState == null) {
-				addFileToWatchMap(watchMap, file, fields);
-			} else {
-				addSavedFileToWatchMap(savedState, fields);
-			}
-		}
-	}
-
-	private void addSavedFileToWatchMap(FileState savedFileState, Event fields) {
-		try {
-			File file = savedFileState.getFile();
-			FileState state = new FileState(file);
-			state.setFields(fields);
-			int savedSignatureLength = savedFileState.getSignatureLength();
-			state.setSignatureLength(savedSignatureLength);
-			long savedSignature = savedFileState.getSignature();
-			int signatureLength = (int) (state.getSize() > MAX_SIGNATURE_LENGTH ? MAX_SIGNATURE_LENGTH : state.getSize());
-			long signature = FileSigner.computeSignature(state.getRandomAccessFile(), signatureLength);
-			if(signature == savedSignature) { 
-				state.setPointer(savedFileState.getPointer());
-				logger.debug("Restoring signature of size : " + savedSignatureLength + " on file : " + file + " : " + savedSignature);
-			} else {
-				logger.debug("File " + file + " signature has changed");
-				logger.trace("Setting signature of size : " + signatureLength + " on file : " + file + " : " + signature);
-			}
-			state.setSignatureLength(signatureLength);
-			state.setSignature(signature);
-			watchMap.put(file, state);
-		} catch (IOException e) {
-			logger.error("Caught IOException : " + e.getMessage());
+			addFileToWatchMap(newWatchMap, file, fields);
 		}
 	}
 
@@ -263,7 +237,7 @@ public class FileWatcher {
 		try {
 			FileState state = new FileState(file);
 			state.setFields(fields);
-			int signatureLength = (int) (state.getSize() > MAX_SIGNATURE_LENGTH ? MAX_SIGNATURE_LENGTH : state.getSize());
+			int signatureLength = (int) (state.getSize() > maxSignatureLength ? maxSignatureLength : state.getSize());
 			state.setSignatureLength(signatureLength);
 			long signature = FileSigner.computeSignature(state.getRandomAccessFile(), signatureLength);
 			state.setSignature(signature);
@@ -277,7 +251,7 @@ public class FileWatcher {
 	public void onFileChange(File file, Event fields) {
 		try {
 			logger.debug("Change detected on file : " + file.getCanonicalPath());
-			addFileToWatchMap(changedWatchMap, file, fields);
+			addFileToWatchMap(newWatchMap, file, fields);
 		} catch (IOException e) {
 			logger.error("Caught IOException : " + e.getMessage());
 		}	
@@ -286,7 +260,7 @@ public class FileWatcher {
 	public void onFileCreate(File file, Event fields) {
 		try {
 			logger.debug("Create detected on file : " + file.getCanonicalPath());
-			addFileToWatchMap(changedWatchMap, file, fields);
+			addFileToWatchMap(newWatchMap, file, fields);
 		} catch (IOException e) {
 			logger.error("Caught IOException : " + e.getMessage());
 		}
@@ -295,7 +269,7 @@ public class FileWatcher {
 	public void onFileDelete(File file) {
 		try {
 			logger.debug("Delete detected on file : " + file.getCanonicalPath());
-			watchMap.get(file).setDeleted();
+			oldWatchMap.get(file).setDeleted();
 		} catch (IOException e) {
 			logger.error("Caught IOException : " + e.getMessage());
 		}
@@ -304,8 +278,8 @@ public class FileWatcher {
 	private void printWatchMap() throws IOException {
 		if(logger.isTraceEnabled()) {
 			logger.trace("WatchMap contents : ");
-			for(File file : watchMap.keySet()) {
-				FileState state = watchMap.get(file);
+			for(File file : oldWatchMap.keySet()) {
+				FileState state = oldWatchMap.get(file);
 				logger.trace("\tFile : " + file.getCanonicalPath() + " marked for deletion : " + state.isDeleted());
 			}
 		}
@@ -314,8 +288,8 @@ public class FileWatcher {
 	private void removeMarkedFilesFromWatchMap() throws IOException {
 		logger.trace("Removing deleted files from watchMap");
 		List<File> markedList = null;
-		for(File file : watchMap.keySet()) {
-			FileState state = watchMap.get(file);
+		for(File file : oldWatchMap.keySet()) {
+			FileState state = oldWatchMap.get(file);
 			if(state.isDeleted()) {
 				if(markedList == null) {
 					markedList = new ArrayList<File>();
@@ -325,19 +299,29 @@ public class FileWatcher {
 		}
 		if(markedList != null) {
 			for(File file : markedList) {
-				FileState state = watchMap.remove(file);
-				state.getRandomAccessFile().close();
-				logger.trace("\tFile : " + file.getCanonicalFile() + " removed");
+				FileState state = oldWatchMap.remove(file);
+				try {
+					state.getRandomAccessFile().close();
+				} catch(Exception e) {}
+				logger.trace("\tFile : " + file + " removed");
 			}
 		}
 	}
 
 	public void close() throws IOException {
 		logger.debug("Closing all files");
-		for(File file : watchMap.keySet()) {
-			FileState state = watchMap.get(file);
+		for(File file : oldWatchMap.keySet()) {
+			FileState state = oldWatchMap.get(file);
 			state.getRandomAccessFile().close();
 		}
+	}
+
+	public int getMaxSignatureLength() {
+		return maxSignatureLength;
+	}
+
+	public void setMaxSignatureLength(int maxSignatureLength) {
+		this.maxSignatureLength = maxSignatureLength;
 	}
 
 }

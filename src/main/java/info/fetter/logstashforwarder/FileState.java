@@ -18,6 +18,7 @@ package info.fetter.logstashforwarder;
  */
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -47,10 +48,10 @@ public class FileState {
 	private FileState oldFileState;
 	@JsonIgnore
 	private Event fields;
-	
+
 	public FileState() {
 	}
-	
+
 	public FileState(File file) throws IOException {
 		this.file = file;
 		directory = file.getCanonicalFile().getParent();
@@ -59,9 +60,16 @@ public class FileState {
 		lastModified = file.lastModified();
 		size = file.length();
 	}
-	
-	private void setFileFromDirectoryAndName() {
-		this.file = new File(directory + File.separator + fileName);
+
+	private void setFileFromDirectoryAndName() throws FileNotFoundException {
+		file = new File(directory + File.separator + fileName);
+		if(file.exists()) {
+			randomAccessFile = new RandomAccessFile(file, "r");
+			lastModified = file.lastModified();
+			size = file.length();
+		} else {
+			deleted = true;
+		}
 	}
 
 	public File getFile() {
@@ -75,41 +83,41 @@ public class FileState {
 	public long getSize() {
 		return size;
 	}
-	
+
 	public String getDirectory() {
 		return directory;
 	}
-	
-	public void setDirectory(String directory) {
+
+	public void setDirectory(String directory) throws FileNotFoundException {
 		this.directory = directory;
 		if(fileName != null && directory != null) {
 			setFileFromDirectoryAndName();
 		}
 	}
-	
+
 	public String getFileName() {
 		return fileName;
 	}
-	
-	public void setFileName(String fileName) {
+
+	public void setFileName(String fileName) throws FileNotFoundException {
 		this.fileName = fileName;
 		if(fileName != null && directory != null) {
 			setFileFromDirectoryAndName();
 		}
 	}
-	
+
 	public boolean isDeleted() {
 		return deleted;
 	}
-	
+
 	public void setDeleted() {
 		deleted = true;
 	}
-	
+
 	public boolean hasChanged() {
 		return changed;
 	}
-	
+
 	public void setChanged(boolean changed) {
 		this.changed = changed;
 	}
@@ -129,7 +137,7 @@ public class FileState {
 	public long getPointer() {
 		return pointer;
 	}
-	
+
 	public void setPointer(long pointer) {
 		this.pointer = pointer;
 	}
@@ -157,16 +165,16 @@ public class FileState {
 	public void setFields(Event fields) {
 		this.fields = fields;
 	}
-	
+
 	@Override
 	public String toString() {
-	     return new ToStringBuilder(this).
-	    	       append("fileName", fileName).
-	    	       append("directory", directory).
-	    	       append("pointer", pointer).
-	    	       append("signature", signature).
-	    	       append("signatureLength", signatureLength).
-	    	       toString();
+		return new ToStringBuilder(this).
+				append("fileName", fileName).
+				append("directory", directory).
+				append("pointer", pointer).
+				append("signature", signature).
+				append("signatureLength", signatureLength).
+				toString();
 	}
-	
+
 }
