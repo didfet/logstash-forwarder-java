@@ -13,7 +13,7 @@ Here are a few features of this program :
 
 Logstash-forwarder is written in go. This programming language is not available on all platforms (for example AIX), that's why a java version is more portable.
 
-Logstash runs on java and provides a lumberjack output, but the file input doesn't run on all plaforms (for example AIX) and logstash requires a recent JVM. Moreover Logstash is heavier : big package and more system resources.
+Logstash runs on java and provides a lumberjack output, but the file input doesn't run on all plaforms (for example AIX) and logstash requires a recent JVM. Moreover Logstash is heavier : it is a big package and uses more system resources.
 
 So logstash-forwarder-java is a solution for those who want a portable, lightweight log shipper for their ELK stack.
 
