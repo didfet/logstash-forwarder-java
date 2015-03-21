@@ -1,20 +1,5 @@
 package info.fetter.logstashforwarder;
 
-import info.fetter.logstashforwarder.util.AdapterException;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.log4j.Logger;
-
 /*
  * Copyright 2015 Didier Fetter
  *
@@ -32,8 +17,29 @@ import org.apache.log4j.Logger;
  *
  */
 
+import info.fetter.logstashforwarder.util.AdapterException;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+
 public class FileReader {
 	private static Logger logger = Logger.getLogger(FileReader.class);
+	private static final byte[] ZIP_MAGIC = new byte[] {(byte) 0x50, (byte) 0x4b, (byte) 0x03, (byte) 0x04};
+	private static final byte[] LZW_MAGIC = new byte[] {(byte) 0x1f, (byte) 0x9d};
+	private static final byte[] LZH_MAGIC = new byte[] {(byte) 0x1f, (byte) 0xa0};
+	private static final byte[] GZ_MAGIC = new byte[] {(byte) 0x1f, (byte) 0x8b, (byte) 0x08};
+	private static final byte[][] MAGICS = new byte[][] {ZIP_MAGIC, LZW_MAGIC, LZH_MAGIC, GZ_MAGIC};
 	private ProtocolAdapter adapter;
 	private int spoolSize = 0;
 	private List<Event> eventList;
@@ -79,9 +85,34 @@ public class FileReader {
 			logger.trace("File : " + file + " pointer : " + pointer);
 			logger.trace("Space left in spool : " + spaceLeftInSpool);
 		}
-		pointer = readLines(state, spaceLeftInSpool);
+		if(isCompressedFile(state)) {
+			pointer = file.length();
+		} else {
+			pointer = readLines(state, spaceLeftInSpool);
+		}
 		pointerMap.put(file, pointer);
 		return eventList.size() - eventListSizeBefore; // Return number of events read
+	}
+
+	private boolean isCompressedFile(FileState state) {
+		RandomAccessFile reader = state.getRandomAccessFile();
+		try {
+			for(byte[] magic : MAGICS) {
+				byte[] fileBytes = new byte[magic.length]; 
+				reader.seek(0);
+				int read = reader.read(fileBytes);
+				if (read != magic.length) {
+					continue;
+				}
+				if(Arrays.equals(magic, fileBytes)) {
+					return true;
+				}
+			}
+		} catch(IOException e) {
+			logger.warn("Exception raised while reading file : " + state.getFile());
+			e.printStackTrace();
+		}
+		return false;
 	}
 
 	private long readLines(FileState state, int spaceLeftInSpool) {
