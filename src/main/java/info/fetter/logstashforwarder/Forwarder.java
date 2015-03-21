@@ -53,6 +53,7 @@ public class Forwarder {
 	private static ProtocolAdapter adapter;
 	private static Random random = new Random();
 	private static int signatureLength = 4096;
+	private static boolean tailSelected = false;
 
 	public static void main(String[] args) {
 		try {
@@ -64,6 +65,7 @@ public class Forwarder {
 			//			Logger.getLogger(FileReader.class).setAdditivity(false);
 			watcher = new FileWatcher();
 			watcher.setMaxSignatureLength(signatureLength);
+			watcher.setTail(tailSelected);
 			configManager = new ConfigurationManager(config);
 			configManager.readConfiguration();
 			for(FilesSection files : configManager.getConfig().getFiles()) {
@@ -117,6 +119,7 @@ public class Forwarder {
 		Option quiet = new Option("quiet", "operate in quiet mode - only emit errors to log");
 		Option debug = new Option("debug", "operate in debug mode");
 		Option trace = new Option("trace", "operate in trace mode");
+		Option tail = new Option("tail", "read new files from the end");
 
 		Option spoolSizeOption = OptionBuilder.withArgName("number of events")
 				.hasArg()
@@ -142,6 +145,7 @@ public class Forwarder {
 		.addOption(quiet)
 		.addOption(debug)
 		.addOption(trace)
+		.addOption(tail)
 		.addOption(signatureLengthOption)
 		.addOption(configOption);	
 		CommandLineParser parser = new GnuParser();
@@ -167,6 +171,9 @@ public class Forwarder {
 			}
 			if(line.hasOption("trace")) {
 				logLevel = TRACE;
+			}
+			if(line.hasOption("tail")) {
+				tailSelected = true;
 			}
 		} catch(ParseException e) {
 			printHelp(options);

@@ -43,6 +43,7 @@ public class FileWatcher {
 	private Map<File,FileState> newWatchMap = new HashMap<File,FileState>();
 	private FileState[] savedStates;
 	private int maxSignatureLength;
+	private boolean tail = false;
 
 	public FileWatcher() {
 		try {
@@ -60,6 +61,13 @@ public class FileWatcher {
 			}
 		}
 		processModifications();
+		if(tail) {
+			for(FileState state : oldWatchMap.values()) {
+				if(state.getPointer() == 0) {
+					state.setPointer(state.getSize());
+				}
+			}
+		}
 		printWatchMap();
 	}
 
@@ -322,6 +330,10 @@ public class FileWatcher {
 
 	public void setMaxSignatureLength(int maxSignatureLength) {
 		this.maxSignatureLength = maxSignatureLength;
+	}
+
+	public void setTail(boolean tail) {
+		this.tail = tail;
 	}
 
 }
