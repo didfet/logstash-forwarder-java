@@ -105,6 +105,7 @@ public class FileReader {
 					continue;
 				}
 				if(Arrays.equals(magic, fileBytes)) {
+					logger.debug("Compressed file detected : " + state.getFile());
 					return true;
 				}
 			}
