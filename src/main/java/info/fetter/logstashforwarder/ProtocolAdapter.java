@@ -24,4 +24,6 @@ import java.util.List;
 public interface ProtocolAdapter {
 	public int sendEvents(List<Event> eventList) throws AdapterException;
 	public void close() throws AdapterException;
+	public String getServer();
+	public int getPort();
 }

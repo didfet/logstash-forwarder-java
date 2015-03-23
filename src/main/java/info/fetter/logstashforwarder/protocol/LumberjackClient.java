@@ -204,4 +204,13 @@ public class LumberjackClient implements ProtocolAdapter {
 		}
 		logger.info("Connection to " + server + ":" + port + " closed");
 	}
+
+	public String getServer() {
+		return server;
+	}
+
+	public int getPort() {
+		return port;
+	}
+	
 }

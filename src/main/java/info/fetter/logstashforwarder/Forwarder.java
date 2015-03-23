@@ -100,10 +100,20 @@ public class Forwarder {
 	private static void connectToServer() {
 		int randomServerIndex = 0;
 		List<String> serverList = configManager.getConfig().getNetwork().getServers();
+		if(adapter != null) {
+			try {
+				adapter.close();
+			} catch(AdapterException e) {
+				logger.error("Error while closing connection to " + adapter.getServer() + ":" + adapter.getPort());
+			} finally {
+				adapter = null;
+			}
+		}
 		while(adapter == null) {
 			try {
 				randomServerIndex = random.nextInt(serverList.size());
 				String[] serverAndPort = serverList.get(randomServerIndex).split(":");
+				logger.info("Trying to connect to " + serverList.get(randomServerIndex));
 				adapter = new LumberjackClient(configManager.getConfig().getNetwork().getSslCA(),serverAndPort[0],Integer.parseInt(serverAndPort[1]));
 				reader.setAdapter(adapter);
 			} catch(Exception ex) {

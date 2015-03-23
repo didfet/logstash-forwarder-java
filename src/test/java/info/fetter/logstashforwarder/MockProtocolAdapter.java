@@ -38,4 +38,14 @@ public class MockProtocolAdapter implements ProtocolAdapter {
 		// not implemented
 	}
 
+	public String getServer() {
+		// TODO Auto-generated method stub
+		return "";
+	}
+
+	public int getPort() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 }
