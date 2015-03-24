@@ -45,6 +45,7 @@ public class Forwarder {
 	private static Logger logger = Logger.getLogger(Forwarder.class);
 	private static int spoolSize = 1024;
 	private static int idleTimeout = 5000;
+	private static int networkTimeout = 15000;
 	private static String config;
 	private static ConfigurationManager configManager;
 	private static FileWatcher watcher;
@@ -91,7 +92,7 @@ public class Forwarder {
 				Thread.sleep(idleTimeout);
 			} catch(AdapterException e) {
 				logger.error("Lost server connection");
-				Thread.sleep(configManager.getConfig().getNetwork().getTimeout() * 1000);
+				Thread.sleep(networkTimeout);
 				connectToServer();
 			}
 		}
@@ -100,6 +101,7 @@ public class Forwarder {
 	private static void connectToServer() {
 		int randomServerIndex = 0;
 		List<String> serverList = configManager.getConfig().getNetwork().getServers();
+		networkTimeout = configManager.getConfig().getNetwork().getTimeout() * 1000;
 		if(adapter != null) {
 			try {
 				adapter.close();
@@ -114,7 +116,7 @@ public class Forwarder {
 				randomServerIndex = random.nextInt(serverList.size());
 				String[] serverAndPort = serverList.get(randomServerIndex).split(":");
 				logger.info("Trying to connect to " + serverList.get(randomServerIndex));
-				adapter = new LumberjackClient(configManager.getConfig().getNetwork().getSslCA(),serverAndPort[0],Integer.parseInt(serverAndPort[1]));
+				adapter = new LumberjackClient(configManager.getConfig().getNetwork().getSslCA(),serverAndPort[0],Integer.parseInt(serverAndPort[1]), networkTimeout);
 				reader.setAdapter(adapter);
 			} catch(Exception ex) {
 				logger.error("Failed to connect to server " + serverList.get(randomServerIndex) + " : " + ex.getMessage());

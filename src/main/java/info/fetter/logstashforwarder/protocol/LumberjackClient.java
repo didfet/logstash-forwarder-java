@@ -27,16 +27,19 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ProtocolException;
+import java.net.Socket;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.Deflater;
 
-import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
 import org.apache.commons.io.HexDump;
@@ -50,7 +53,8 @@ public class LumberjackClient implements ProtocolAdapter {
 	private final static byte FRAME_DATA = 0x44;
 	private final static byte FRAME_COMPRESSED = 0x43;
 
-	private SSLSocket socket;
+	private Socket socket;
+	private SSLSocket sslSocket;
 	private KeyStore keyStore;
 	private String server;
 	private int port;
@@ -58,7 +62,7 @@ public class LumberjackClient implements ProtocolAdapter {
 	private DataInputStream input;
 	private int sequence = 1;
 
-	public LumberjackClient(String keyStorePath, String server, int port) throws IOException {
+	public LumberjackClient(String keyStorePath, String server, int port, int timeout) throws IOException {
 		this.server = server;
 		this.port = port;
 
@@ -72,13 +76,16 @@ public class LumberjackClient implements ProtocolAdapter {
 			SSLContext context = SSLContext.getInstance("TLS");
 			context.init(null, tmf.getTrustManagers(), null);
 
-			SocketFactory socketFactory = context.getSocketFactory();
-			socket = (SSLSocket)socketFactory.createSocket(this.server, this.port);
-			socket.setUseClientMode(true);
-			socket.startHandshake();
+			SSLSocketFactory socketFactory = context.getSocketFactory();
+			socket = new Socket();
+			socket.connect(new InetSocketAddress(InetAddress.getByName(server), port), timeout);
+			socket.setSoTimeout(timeout);
+			sslSocket = (SSLSocket)socketFactory.createSocket(socket, server, port, true);
+			sslSocket.setUseClientMode(true);
+			sslSocket.startHandshake();
 
-			output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
-			input = new DataInputStream(socket.getInputStream());
+			output = new DataOutputStream(new BufferedOutputStream(sslSocket.getOutputStream()));
+			input = new DataInputStream(sslSocket.getInputStream());
 
 			logger.info("Connected to " + server + ":" + port);
 		} catch(IOException e) {
@@ -198,7 +205,7 @@ public class LumberjackClient implements ProtocolAdapter {
 
 	public void close() throws AdapterException {
 		try {
-			socket.close();
+			sslSocket.close();
 		} catch(Exception e) {
 			throw new AdapterException(e);
 		}
