@@ -170,20 +170,17 @@ public class FileWatcher {
 		}
 
 		logger.trace("Refreshing file state");
-		for(File file : newWatchMap.keySet()) {
+		for(FileState state : newWatchMap.values()) {
 			if(logger.isTraceEnabled()) {
-				logger.trace("Refreshing file : " + file.getCanonicalPath());
+				logger.trace("Refreshing file : " + state.getFile());
 			}
-			FileState state = newWatchMap.get(file);
 			FileState oldState = state.getOldFileState();
 			if(oldState == null) {
 				logger.trace("File has been truncated or created, not retrieving pointer");
 			} else {
 				logger.trace("File has not been truncated or created, retrieving pointer");
 				state.setPointer(oldState.getPointer());
-				try {
-					oldState.getRandomAccessFile().close();
-				} catch(Exception e) {}
+				state.deleteOldFileState();
 			}
 		}
 

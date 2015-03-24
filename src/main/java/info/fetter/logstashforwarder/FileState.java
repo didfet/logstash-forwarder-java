@@ -157,6 +157,13 @@ public class FileState {
 	public void setOldFileState(FileState oldFileState) {
 		this.oldFileState = oldFileState;
 	}
+	
+	public void deleteOldFileState() {
+		try {
+			oldFileState.getRandomAccessFile().close();
+			oldFileState = null;
+		} catch(Exception e) {}
+	}
 
 	public Event getFields() {
 		return fields;
