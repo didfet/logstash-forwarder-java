@@ -36,9 +36,13 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.log4j.Appender;
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.Layout;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 import org.apache.log4j.spi.RootLogger;
 
 public class Forwarder {
@@ -59,11 +63,7 @@ public class Forwarder {
 	public static void main(String[] args) {
 		try {
 			parseOptions(args);
-			BasicConfigurator.configure();
-			RootLogger.getRootLogger().setLevel(logLevel);
-			//			Logger.getLogger(FileReader.class).addAppender((Appender)RootLogger.getRootLogger().getAllAppenders().nextElement());
-			//			Logger.getLogger(FileReader.class).setLevel(TRACE);
-			//			Logger.getLogger(FileReader.class).setAdditivity(false);
+			setupLogging();
 			watcher = new FileWatcher();
 			watcher.setMaxSignatureLength(signatureLength);
 			watcher.setTail(tailSelected);
@@ -200,6 +200,16 @@ public class Forwarder {
 	private static void printHelp(Options options) {
 		HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp("logstash-forwarder", options);
+	}
+	
+	private static void setupLogging() {
+		Layout layout = new PatternLayout("%d %p %c{1} - %m%n");
+		Appender appender = new ConsoleAppender(layout);
+		BasicConfigurator.configure(appender);
+		RootLogger.getRootLogger().setLevel(logLevel);
+		//			Logger.getLogger(FileReader.class).addAppender((Appender)RootLogger.getRootLogger().getAllAppenders().nextElement());
+		//			Logger.getLogger(FileReader.class).setLevel(TRACE);
+		//			Logger.getLogger(FileReader.class).setAdditivity(false);
 	}
 
 }
