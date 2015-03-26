@@ -41,7 +41,7 @@ For help run :
 ### Configuration
 
 The configuration file is the same (json format), but there are a few differences :
-  - the ssl ca parameter points to a java keystore containing the root certificate of the server, not a PEM file
+  - the ssl ca parameter points to a java [keystore](https://github.com/didfet/logstash-forwarder-java/blob/master/HOWTO-KEYSTORE.md) containing the root certificate of the server, not a PEM file
   - comments are C-style comments
   - the stdin input is not yet implemented
 
