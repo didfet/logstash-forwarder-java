@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>logstash-forwarder-java</groupId>
 	<artifactId>logstash-forwarder-java</artifactId>
-	<version>0.1.4</version>
+	<version>0.2.0-SNAPSHOT</version>
 	<name>logstash-forwarder-java</name>
 	<description>Java version of logstash forwarder</description>
 	<url>https://github.com/didfet/logstash-forwarder-java</url>

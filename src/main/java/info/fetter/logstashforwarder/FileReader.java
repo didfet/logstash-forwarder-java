@@ -44,6 +44,8 @@ public class FileReader {
 	private int spoolSize = 0;
 	private List<Event> eventList;
 	private Map<File,Long> pointerMap;
+	private final int STRINGBUILDER_INITIAL_CAPACITY = 1000;
+	private StringBuilder stringBuilder;
 	private String hostname;
 	{
 		try {
@@ -60,6 +62,7 @@ public class FileReader {
 
 	public int readFiles(Collection<FileState> fileList) throws AdapterException {
 		int eventCount = 0;
+		stringBuilder = new StringBuilder(STRINGBUILDER_INITIAL_CAPACITY);
 		if(logger.isTraceEnabled()) {
 			logger.trace("Reading " + fileList.size() + " file(s)");
 		}
@@ -141,22 +144,22 @@ public class FileReader {
 	}
 
 	private String readLine(RandomAccessFile reader) throws IOException {
-		StringBuffer sb  = new StringBuffer();
+		stringBuilder.setLength(0);
 		int ch;
 		boolean seenCR = false;
 		while((ch=reader.read()) != -1) {
 			switch(ch) {
 			case '\n':
-				return sb.toString();
+				return stringBuilder.toString();
 			case '\r':
 				seenCR = true;
 				break;
 			default:
 				if (seenCR) {
-					sb.append('\r');
+					stringBuilder.append('\r');
 					seenCR = false;
 				}
-				sb.append((char)ch); // add character, not its ascii value
+				stringBuilder.append((char)ch); // add character, not its ascii value
 			}
 		}
 		return null;
