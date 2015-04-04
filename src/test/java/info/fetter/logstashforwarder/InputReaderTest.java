@@ -52,7 +52,7 @@ public class InputReaderTest {
 		PipedInputStream in = new PipedInputStream();
 		PipedOutputStream out = new PipedOutputStream(in);
 		PrintWriter writer = new PrintWriter(out);
-		InputReader reader = new InputReader(2, in, null);
+		InputReader reader = new InputReader(2, in);
 		MockProtocolAdapter adapter = new MockProtocolAdapter();
 		reader.setAdapter(adapter);
 
@@ -103,7 +103,7 @@ public class InputReaderTest {
 		PipedInputStream in = new PipedInputStream();
 		PipedOutputStream out = new PipedOutputStream(in);
 		PrintWriter writer = new PrintWriter(out);
-		InputReader reader = new InputReader(2, in, null);
+		InputReader reader = new InputReader(2, in);
 		MockProtocolAdapter adapter = new MockProtocolAdapter();
 		reader.setAdapter(adapter);
 

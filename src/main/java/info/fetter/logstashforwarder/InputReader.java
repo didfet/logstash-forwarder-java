@@ -32,10 +32,9 @@ public class InputReader extends Reader {
 	private long position = 0;
 	private Event fields;
 
-	public InputReader(int spoolSize, InputStream in, Event fields) {
+	public InputReader(int spoolSize, InputStream in) {
 		super(spoolSize);
 		reader = new BufferedReader(new InputStreamReader(in));
-		this.fields = fields;
 		stringBuilder = new StringBuilder(STRINGBUILDER_INITIAL_CAPACITY);
 	}
 	
@@ -87,6 +86,10 @@ public class InputReader extends Reader {
 			}
 		}
 		return null;
+	}
+	
+	public void setFields(Event fields) {
+		this.fields = fields;
 	}
 
 }

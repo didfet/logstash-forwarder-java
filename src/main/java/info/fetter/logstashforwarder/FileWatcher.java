@@ -44,6 +44,8 @@ public class FileWatcher {
 	private FileState[] savedStates;
 	private int maxSignatureLength;
 	private boolean tail = false;
+	private Event stdinFields;
+	private boolean stdinConfigured = false;
 
 	public FileWatcher() {
 		try {
@@ -101,6 +103,17 @@ public class FileWatcher {
 		int numberOfLinesRead = reader.readFiles(oldWatchMap.values());
 		Registrar.writeStateToJson(oldWatchMap.values());
 		return numberOfLinesRead;
+	}
+
+	public int readStdin(InputReader reader) throws AdapterException, IOException {
+		if(stdinConfigured) {
+			logger.debug("Reading stdin");
+			reader.setFields(stdinFields);
+			int numberOfLinesRead = reader.readInput();
+			return numberOfLinesRead;
+		} else {
+			return 0;
+		}
 	}
 
 	private void processModifications() throws IOException {
@@ -224,7 +237,9 @@ public class FileWatcher {
 	}
 
 	private void addStdIn(Event fields) {
-		logger.error("Watching stdin : not implemented yet");
+		logger.error("Watching stdin");
+		stdinFields = fields;
+		stdinConfigured = true;
 	}
 
 	private void initializeWatchMap(File directory, IOFileFilter fileFilter, Event fields) throws Exception {
