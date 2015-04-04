@@ -56,4 +56,8 @@ public class Event {
 	public Map<String,byte[]> getKeyValues() {
 		return keyValues;
 	}
+	
+	public byte[] getValue(String fieldName) {
+		return keyValues.get(fieldName);
+	}
 }

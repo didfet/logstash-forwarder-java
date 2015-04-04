@@ -20,21 +20,17 @@ package info.fetter.logstashforwarder;
 import static org.apache.log4j.Level.*;
 import info.fetter.logstashforwarder.util.AdapterException;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.RootLogger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import static org.junit.Assert.*;
 
 public class InputReaderTest {
 	Logger logger = Logger.getLogger(InputReaderTest.class);
@@ -52,39 +48,77 @@ public class InputReaderTest {
 
 	@Test
 	public void testInputReader1() throws IOException, InterruptedException, AdapterException {
+		int numberOfEvents = 0;
 		PipedInputStream in = new PipedInputStream();
 		PipedOutputStream out = new PipedOutputStream(in);
 		PrintWriter writer = new PrintWriter(out);
 		InputReader reader = new InputReader(2, in, null);
-		reader.setAdapter(new MockProtocolAdapter());
+		MockProtocolAdapter adapter = new MockProtocolAdapter();
+		reader.setAdapter(adapter);
 
-		reader.readInput();
+		numberOfEvents = reader.readInput();
+		assertEquals(0, numberOfEvents);
 
 		writer.println("line1");
 		writer.flush();
-		reader.readInput();
+		numberOfEvents = reader.readInput();
+		assertEquals(1, numberOfEvents);
+		assertArrayEquals("line1".getBytes(), adapter.getLastEvents().get(0).getValue("line"));
 
 		writer.print("line2");
 		writer.flush();
-		reader.readInput();
+		numberOfEvents = reader.readInput();
+		assertEquals(0, numberOfEvents);
 
 		writer.println();
 		writer.flush();
-		reader.readInput();
+		numberOfEvents = reader.readInput();
+		assertEquals(1, numberOfEvents);
+		assertArrayEquals("line2".getBytes(), adapter.getLastEvents().get(0).getValue("line"));
 
 		writer.println("line3");
 		writer.println("line4");
 		writer.println("line5");
 		writer.flush();
-		reader.readInput();
+		numberOfEvents = reader.readInput();
+		assertEquals(2, numberOfEvents);
+		assertArrayEquals("line3".getBytes(), adapter.getLastEvents().get(0).getValue("line"));
+		assertArrayEquals("line4".getBytes(), adapter.getLastEvents().get(1).getValue("line"));
 
-		reader.readInput();
-		reader.readInput();
+		numberOfEvents = reader.readInput();
+		assertEquals(1, numberOfEvents);
+		assertArrayEquals("line5".getBytes(), adapter.getLastEvents().get(0).getValue("line"));
+		
+		numberOfEvents = reader.readInput();
+		assertEquals(0, numberOfEvents);
 
-		while(in.available() > 0) {
-			logger.trace("read : " + in.read());
-		}
+		assertEquals(0, in.available());
 
 		writer.close();
+	}
+	
+	@Test
+	public void testInputReaderCloseStream() throws AdapterException, IOException {
+		int numberOfEvents = 0;
+		PipedInputStream in = new PipedInputStream();
+		PipedOutputStream out = new PipedOutputStream(in);
+		PrintWriter writer = new PrintWriter(out);
+		InputReader reader = new InputReader(2, in, null);
+		MockProtocolAdapter adapter = new MockProtocolAdapter();
+		reader.setAdapter(adapter);
+
+		numberOfEvents = reader.readInput();
+		assertEquals(0, numberOfEvents);
+
+		writer.println("line1");
+		writer.flush();
+		numberOfEvents = reader.readInput();
+		assertEquals(1, numberOfEvents);
+		assertArrayEquals("line1".getBytes(), adapter.getLastEvents().get(0).getValue("line"));
+		
+		writer.close();
+		in.close();
+		
+		numberOfEvents = reader.readInput();
 	}
 }

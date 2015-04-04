@@ -17,12 +17,14 @@ package info.fetter.logstashforwarder;
  *
  */
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
 
 public class MockProtocolAdapter implements ProtocolAdapter {
 	private static Logger logger = Logger.getLogger(MockProtocolAdapter.class);
+	private List<Event> lastEvents;
 
 	public int sendEvents(List<Event> eventList) {
 		for(Event event : eventList) {
@@ -31,7 +33,12 @@ public class MockProtocolAdapter implements ProtocolAdapter {
 				logger.trace("-- " + key  + ":" + new String(event.getKeyValues().get(key)));
 			}
 		}
+		lastEvents = new ArrayList<Event>(eventList);
 		return eventList.size();
+	}
+	
+	public List<Event> getLastEvents() {
+		return lastEvents;
 	}
 
 	public void close() {
