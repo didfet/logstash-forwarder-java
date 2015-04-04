@@ -121,6 +121,7 @@ public class Forwarder {
 				logger.info("Trying to connect to " + serverList.get(randomServerIndex));
 				adapter = new LumberjackClient(configManager.getConfig().getNetwork().getSslCA(),serverAndPort[0],Integer.parseInt(serverAndPort[1]), networkTimeout);
 				fileReader.setAdapter(adapter);
+				inputReader.setAdapter(adapter);
 			} catch(Exception ex) {
 				logger.error("Failed to connect to server " + serverList.get(randomServerIndex) + " : " + ex.getMessage());
 			}
