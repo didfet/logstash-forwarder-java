@@ -179,6 +179,10 @@ public class FileWatcher {
 				logger.trace("File has been truncated or created, not retrieving pointer");
 			} else {
 				logger.trace("File has not been truncated or created, retrieving pointer");
+				if(logger.isInfoEnabled() && ! state.getFileName().equals(oldState.getFileName()))
+				{
+					logger.info("File rename was detected: " + oldState.getFile() + " -> " + state.getFile());
+				}
 				state.setPointer(oldState.getPointer());
 				state.deleteOldFileState();
 			}

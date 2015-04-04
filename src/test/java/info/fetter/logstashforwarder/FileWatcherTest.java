@@ -56,6 +56,10 @@ public class FileWatcherTest {
 	
 	@Test
 	public void testWildcardWatch() throws InterruptedException, IOException {
+		if(System.getProperty("os.name").toLowerCase().contains("win")) {
+			logger.warn("Not executing this test on windows");
+			return;
+		}
 		FileWatcher watcher = new FileWatcher();
 		watcher.addFilesToWatch("./testFileWatcher*.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY);
 		watcher.initialize();
@@ -74,21 +78,21 @@ public class FileWatcherTest {
 		Thread.sleep(100);
 		watcher.checkFiles();
 		FileUtils.write(file1, "file 1 line 2\n", true);
-		FileUtils.write(file2, "file 2 line 1\n", true);
+		//FileUtils.write(file2, "file 2 line 1\n", true);
 		Thread.sleep(1000);
 		watcher.checkFiles();
 //		FileUtils.moveFileToDirectory(file1, testDir, true);
 //		FileUtils.write(file2, "file 2 line 2\n", true);
-//		FileUtils.moveFile(file2, file1);
+		FileUtils.moveFile(file1, file2);
 //		FileUtils.write(file2, "file 3 line 1\n", true);
 //
-//		Thread.sleep(1000);
-//		watcher.checkFiles();
+		Thread.sleep(1000);
+		watcher.checkFiles();
 //		
 //		
-//		watcher.close();
-//		FileUtils.forceDelete(file1);
-//		FileUtils.forceDelete(file2);
+		watcher.close();
+		FileUtils.deleteQuietly(file1);
+		FileUtils.deleteQuietly(file2);
 //		FileUtils.forceDelete(testDir);
 		
 		
