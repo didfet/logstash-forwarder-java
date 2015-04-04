@@ -22,9 +22,6 @@ import info.fetter.logstashforwarder.util.AdapterException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -33,31 +30,17 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-public class FileReader {
+public class FileReader extends Reader {
 	private static Logger logger = Logger.getLogger(FileReader.class);
 	private static final byte[] ZIP_MAGIC = new byte[] {(byte) 0x50, (byte) 0x4b, (byte) 0x03, (byte) 0x04};
 	private static final byte[] LZW_MAGIC = new byte[] {(byte) 0x1f, (byte) 0x9d};
 	private static final byte[] LZH_MAGIC = new byte[] {(byte) 0x1f, (byte) 0xa0};
 	private static final byte[] GZ_MAGIC = new byte[] {(byte) 0x1f, (byte) 0x8b, (byte) 0x08};
 	private static final byte[][] MAGICS = new byte[][] {ZIP_MAGIC, LZW_MAGIC, LZH_MAGIC, GZ_MAGIC};
-	private ProtocolAdapter adapter;
-	private int spoolSize = 0;
-	private List<Event> eventList;
 	private Map<File,Long> pointerMap;
-	private final int STRINGBUILDER_INITIAL_CAPACITY = 1000;
-	private StringBuilder stringBuilder;
-	private String hostname;
-	{
-		try {
-			hostname = InetAddress.getLocalHost().getHostName();
-		} catch (UnknownHostException e) {
-			throw new RuntimeException(e);
-		}
-	}
 
 	public FileReader(int spoolSize) {
-		this.spoolSize = spoolSize;
-		eventList = new ArrayList<Event>(spoolSize);
+		super(spoolSize);
 	}
 
 	public int readFiles(Collection<FileState> fileList) throws AdapterException {
@@ -163,23 +146,6 @@ public class FileReader {
 			}
 		}
 		return null;
-	}
-
-	private void addEvent(FileState state, long pos, String line) throws IOException {
-		Event event = new Event(state.getFields());
-		event.addField("file", state.getFile().getCanonicalPath())
-		.addField("offset", pos)
-		.addField("line", line)
-		.addField("host", hostname);
-		eventList.add(event);
-	}
-
-	public ProtocolAdapter getAdapter() {
-		return adapter;
-	}
-
-	public void setAdapter(ProtocolAdapter adapter) {
-		this.adapter = adapter;
 	}
 
 }
