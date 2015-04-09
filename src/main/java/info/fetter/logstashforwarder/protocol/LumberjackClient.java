@@ -100,7 +100,9 @@ public class LumberjackClient implements ProtocolAdapter {
 		output.writeByte(FRAME_WINDOW_SIZE);
 		output.writeInt(size);
 		output.flush();
-		logger.debug("Sending window size frame : " + size + " frames");
+		if(logger.isDebugEnabled()) {
+			logger.debug("Sending window size frame : " + size + " frames");
+		}
 		return 6;
 	}
 
@@ -143,7 +145,9 @@ public class LumberjackClient implements ProtocolAdapter {
 		uncompressedOutput.close();
 		Deflater compressor = new Deflater();
 		byte[] uncompressedData = uncompressedBytes.toByteArray();
-		logger.debug("Deflating data : " + uncompressedData.length + " bytes");
+		if(logger.isDebugEnabled()) {
+			logger.debug("Deflating data : " + uncompressedData.length + " bytes");
+		}
 		if(logger.isTraceEnabled()) {
 			HexDump.dump(uncompressedData, 0, System.out, 0);
 		}
@@ -158,7 +162,9 @@ public class LumberjackClient implements ProtocolAdapter {
 		}
 		compressedBytes.close();
 		byte[] compressedData = compressedBytes.toByteArray();
-		logger.debug("Deflated data : " + compressor.getTotalOut() + " bytes");
+		if(logger.isDebugEnabled()) {
+			logger.debug("Deflated data : " + compressor.getTotalOut() + " bytes");
+		}
 		if(logger.isTraceEnabled()) {
 			HexDump.dump(compressedData, 0, System.out, 0);
 		}
@@ -167,7 +173,9 @@ public class LumberjackClient implements ProtocolAdapter {
 		output.write(compressedData);
 		output.flush();
 
-		logger.debug("Sending compressed frame : " + keyValuesList.size() + " frames");
+		if(logger.isDebugEnabled()) {
+			logger.debug("Sending compressed frame : " + keyValuesList.size() + " frames");
+		}
 		return 6 + compressor.getTotalOut();
 	}
 
@@ -181,7 +189,9 @@ public class LumberjackClient implements ProtocolAdapter {
 			throw new ProtocolException("Frame type should be Ack, received " + frameType);
 		}
 		int sequenceNumber = input.readInt();
-		logger.debug("Received ack sequence : " + sequenceNumber);
+		if(logger.isDebugEnabled()) {
+			logger.debug("Received ack sequence : " + sequenceNumber);
+		}
 		return sequenceNumber;
 	}
 
@@ -189,7 +199,9 @@ public class LumberjackClient implements ProtocolAdapter {
 		try {
 			int beginSequence = sequence;
 			int numberOfEvents = eventList.size();
-			logger.info("Sending " + numberOfEvents + " events");
+			if(logger.isInfoEnabled()) {
+				logger.info("Sending " + numberOfEvents + " events");
+			}
 			sendWindowSizeFrame(numberOfEvents);
 			List<Map<String,byte[]>> keyValuesList = new ArrayList<Map<String,byte[]>>(numberOfEvents);
 			for(Event event : eventList) {
@@ -219,5 +231,5 @@ public class LumberjackClient implements ProtocolAdapter {
 	public int getPort() {
 		return port;
 	}
-	
+
 }
