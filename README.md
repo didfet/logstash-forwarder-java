@@ -20,9 +20,9 @@ So logstash-forwarder-java is a solution for those who want a portable, lightwei
 ## How to install it ?
 
 Download one of the following archives :
-  - [logstash-forwarder-java-0.1.4-bin.zip](https://github.com/didfet/logstash-forwarder-java/releases/download/0.1.4/logstash-forwarder-java-0.1.4-bin.zip)
-  - [logstash-forwarder-java-0.1.4-bin.tar.gz](https://github.com/didfet/logstash-forwarder-java/releases/download/0.1.4/logstash-forwarder-java-0.1.4-bin.tar.gz)
-  - [logstash-forwarder-java-0.1.4-bin.tar.bz2](https://github.com/didfet/logstash-forwarder-java/releases/download/0.1.4/logstash-forwarder-java-0.1.4-bin.tar.bz2)
+  - [logstash-forwarder-java-0.2.0-bin.zip](https://github.com/didfet/logstash-forwarder-java/releases/download/0.2.0/logstash-forwarder-java-0.2.0-bin.zip)
+  - [logstash-forwarder-java-0.2.0-bin.tar.gz](https://github.com/didfet/logstash-forwarder-java/releases/download/0.2.0/logstash-forwarder-java-0.2.0-bin.tar.gz)
+  - [logstash-forwarder-java-0.2.0-bin.tar.bz2](https://github.com/didfet/logstash-forwarder-java/releases/download/0.2.0/logstash-forwarder-java-0.2.0-bin.tar.bz2)
 
 Or download the maven project and run maven package. Then you can install one of the archives located in the target directory.
 
@@ -43,7 +43,6 @@ For help run :
 The configuration file is the same (json format), but there are a few differences :
   - the ssl ca parameter points to a java [keystore](https://github.com/didfet/logstash-forwarder-java/blob/master/HOWTO-KEYSTORE.md) containing the root certificate of the server, not a PEM file
   - comments are C-style comments
-  - the stdin input is not yet implemented
 
 ### Command-line options
 
@@ -52,6 +51,7 @@ Some options are the same :
   - quiet
   - idle-timeout (renamed idletimeout)
   - spool-size (renamed spoolsize)
+  - tail
   - help
 
 There are a few more options :
