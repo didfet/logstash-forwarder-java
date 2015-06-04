@@ -315,18 +315,21 @@ public class FileWatcher {
 		for(File file : oldWatchMap.keySet()) {
 			FileState state = oldWatchMap.get(file);
 			if(state.isDeleted()) {
-				if(markedList == null) {
-					markedList = new ArrayList<File>();
+				if(! file.exists()) {
+					if(markedList == null) {
+						markedList = new ArrayList<File>();
+					}
+					markedList.add(file);
 				}
-				markedList.add(file);	
+				try {
+					state.getRandomAccessFile().close();
+				} catch(Exception e) {}
 			}
 		}
 		if(markedList != null) {
 			for(File file : markedList) {
 				FileState state = oldWatchMap.remove(file);
-				try {
-					state.getRandomAccessFile().close();
-				} catch(Exception e) {}
+
 				logger.trace("\tFile : " + file + " removed");
 			}
 		}
