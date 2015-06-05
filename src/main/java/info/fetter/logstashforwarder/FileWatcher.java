@@ -314,6 +314,9 @@ public class FileWatcher {
 		List<File> markedList = null;
 		for(File file : oldWatchMap.keySet()) {
 			FileState state = oldWatchMap.get(file);
+			if(state.getRandomAccessFile() == null) {
+				state.setDeleted();
+			}
 			if(state.isDeleted()) {
 				if(! file.exists()) {
 					if(markedList == null) {
@@ -328,8 +331,7 @@ public class FileWatcher {
 		}
 		if(markedList != null) {
 			for(File file : markedList) {
-				FileState state = oldWatchMap.remove(file);
-
+				oldWatchMap.remove(file);
 				logger.trace("\tFile : " + file + " removed");
 			}
 		}

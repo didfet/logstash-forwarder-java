@@ -64,7 +64,7 @@ public class FileState {
 	private void setFileFromDirectoryAndName() throws FileNotFoundException {
 		file = new File(directory + File.separator + fileName);
 		if(file.exists()) {
-			randomAccessFile = new RandomAccessFile(file, "r");
+			randomAccessFile = null;
 			lastModified = file.lastModified();
 			size = file.length();
 		} else {
