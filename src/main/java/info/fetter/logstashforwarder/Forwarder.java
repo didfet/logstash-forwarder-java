@@ -56,6 +56,7 @@ public class Forwarder {
 	private static FileReader fileReader;
 	private static InputReader inputReader;
 	private static Level logLevel = INFO;
+	private static boolean debugWatcherSelected = false;
 	private static ProtocolAdapter adapter;
 	private static Random random = new Random();
 	private static int signatureLength = 4096;
@@ -134,6 +135,7 @@ public class Forwarder {
 		Option helpOption = new Option("help", "print this message");
 		Option quiet = new Option("quiet", "operate in quiet mode - only emit errors to log");
 		Option debug = new Option("debug", "operate in debug mode");
+		Option debugWatcher = new Option("debugwatcher", "operate watcher in debug mode");
 		Option trace = new Option("trace", "operate in trace mode");
 		Option tail = new Option("tail", "read new files from the end");
 
@@ -160,6 +162,7 @@ public class Forwarder {
 		.addOption(spoolSizeOption)
 		.addOption(quiet)
 		.addOption(debug)
+		.addOption(debugWatcher)
 		.addOption(trace)
 		.addOption(tail)
 		.addOption(signatureLengthOption)
@@ -188,6 +191,9 @@ public class Forwarder {
 			if(line.hasOption("trace")) {
 				logLevel = TRACE;
 			}
+			if(line.hasOption("debugwatcher")) {
+				debugWatcherSelected = true;
+			}
 			if(line.hasOption("tail")) {
 				tailSelected = true;
 			}
@@ -205,12 +211,17 @@ public class Forwarder {
 		HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp("logstash-forwarder", options);
 	}
-	
+
 	private static void setupLogging() {
 		Layout layout = new PatternLayout("%d %p %c{1} - %m%n");
 		Appender appender = new ConsoleAppender(layout);
 		BasicConfigurator.configure(appender);
 		RootLogger.getRootLogger().setLevel(logLevel);
+		if(debugWatcherSelected) {
+			Logger.getLogger(FileWatcher.class).addAppender(appender);
+			Logger.getLogger(FileWatcher.class).setLevel(DEBUG);
+			Logger.getLogger(FileWatcher.class).setAdditivity(false);
+		}
 		//			Logger.getLogger(FileReader.class).addAppender((Appender)RootLogger.getRootLogger().getAllAppenders().nextElement());
 		//			Logger.getLogger(FileReader.class).setLevel(TRACE);
 		//			Logger.getLogger(FileReader.class).setAdditivity(false);

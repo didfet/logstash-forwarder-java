@@ -49,6 +49,7 @@ public class FileWatcher {
 
 	public FileWatcher() {
 		try {
+			logger.debug("Loading saved states");
 			savedStates = Registrar.readStateFromJson();
 		} catch(Exception e) {
 			logger.warn("Could not load saved states : " + e.getMessage());
@@ -59,6 +60,7 @@ public class FileWatcher {
 		logger.debug("Initializing FileWatcher");
 		if(savedStates != null) {
 			for(FileState state : savedStates) {
+				logger.info("Loading file state: " + state.getFile() + ":" + state.getPointer());
 				oldWatchMap.put(state.getFile(), state);
 			}
 		}
@@ -88,7 +90,7 @@ public class FileWatcher {
 	}
 
 	public void checkFiles() throws IOException {
-		logger.debug("Checking files");
+		logger.trace("Checking files");
 		logger.trace("==============");
 		for(FileAlterationObserver observer : observerList) {
 			observer.checkAndNotify();
@@ -98,7 +100,7 @@ public class FileWatcher {
 	}
 
 	public int readFiles(FileReader reader) throws IOException, AdapterException {
-		logger.debug("Reading files");
+		logger.trace("Reading files");
 		logger.trace("==============");
 		int numberOfLinesRead = reader.readFiles(oldWatchMap.values());
 		Registrar.writeStateToJson(oldWatchMap.values());
@@ -182,19 +184,22 @@ public class FileWatcher {
 			}
 		}
 
-		logger.trace("Refreshing file state");
 		for(FileState state : newWatchMap.values()) {
 			if(logger.isTraceEnabled()) {
-				logger.trace("Refreshing file : " + state.getFile());
+				logger.trace("Refreshing file state: " + state.getFile());
 			}
 			FileState oldState = state.getOldFileState();
 			if(oldState == null) {
-				logger.trace("File has been truncated or created, not retrieving pointer");
+				if(logger.isDebugEnabled()) {
+					logger.debug("File " + state.getFile() + " has been truncated or created, not retrieving pointer");
+				}
 			} else {
-				logger.trace("File has not been truncated or created, retrieving pointer");
 				if(logger.isInfoEnabled() && ! state.getFileName().equals(oldState.getFileName()))
 				{
 					logger.info("File rename was detected: " + oldState.getFile() + " -> " + state.getFile());
+				}
+				if(logger.isDebugEnabled()) {
+					logger.debug("File " + state.getFile() + " has not been truncated or created, retrieving pointer: " + oldState.getPointer());
 				}
 				state.setPointer(oldState.getPointer());
 				state.deleteOldFileState();
@@ -332,7 +337,7 @@ public class FileWatcher {
 		if(markedList != null) {
 			for(File file : markedList) {
 				oldWatchMap.remove(file);
-				logger.trace("\tFile : " + file + " removed");
+				logger.debug("File: " + file + " removed from watchMap");
 			}
 		}
 	}
