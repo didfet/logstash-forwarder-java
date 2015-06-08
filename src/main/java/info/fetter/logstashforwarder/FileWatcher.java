@@ -337,7 +337,7 @@ public class FileWatcher {
 		if(markedList != null) {
 			for(File file : markedList) {
 				oldWatchMap.remove(file);
-				logger.debug("File: " + file + " removed from watchMap");
+				logger.debug("File " + file + " removed from watchMap");
 			}
 		}
 	}

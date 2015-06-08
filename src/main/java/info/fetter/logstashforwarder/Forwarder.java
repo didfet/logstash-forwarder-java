@@ -43,6 +43,7 @@ import org.apache.log4j.Layout;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
+import org.apache.log4j.RollingFileAppender;
 import org.apache.log4j.spi.RootLogger;
 
 public class Forwarder {
@@ -61,6 +62,9 @@ public class Forwarder {
 	private static Random random = new Random();
 	private static int signatureLength = 4096;
 	private static boolean tailSelected = false;
+	private static String logfile = null;
+	private static String logfileSize = "10M";
+	private static int logfileNumber = 5;
 
 	public static void main(String[] args) {
 		try {
@@ -133,11 +137,11 @@ public class Forwarder {
 	static void parseOptions(String[] args) {
 		Options options = new Options();
 		Option helpOption = new Option("help", "print this message");
-		Option quiet = new Option("quiet", "operate in quiet mode - only emit errors to log");
-		Option debug = new Option("debug", "operate in debug mode");
-		Option debugWatcher = new Option("debugwatcher", "operate watcher in debug mode");
-		Option trace = new Option("trace", "operate in trace mode");
-		Option tail = new Option("tail", "read new files from the end");
+		Option quietOption = new Option("quiet", "operate in quiet mode - only emit errors to log");
+		Option debugOption = new Option("debug", "operate in debug mode");
+		Option debugWatcherOption = new Option("debugwatcher", "operate watcher in debug mode");
+		Option traceOption = new Option("trace", "operate in trace mode");
+		Option tailOption = new Option("tail", "read new files from the end");
 
 		Option spoolSizeOption = OptionBuilder.withArgName("number of events")
 				.hasArg()
@@ -156,17 +160,33 @@ public class Forwarder {
 				.hasArg()
 				.withDescription("Maximum length of file signature")
 				.create("signaturelength");
+		Option logfileOption = OptionBuilder.withArgName("logfile name")
+				.hasArg()
+				.withDescription("Logfile name")
+				.create("logfile");
+		Option logfileSizeOption = OptionBuilder.withArgName("logfile size")
+				.hasArg()
+				.withDescription("Logfile size (default 10M)")
+				.create("logfilesize");
+		Option logfileNumberOption = OptionBuilder.withArgName("number of logfiles")
+				.hasArg()
+				.withDescription("Number of logfiles (default 5)")
+				.create("logfilenumber");
 
 		options.addOption(helpOption)
 		.addOption(idleTimeoutOption)
 		.addOption(spoolSizeOption)
-		.addOption(quiet)
-		.addOption(debug)
-		.addOption(debugWatcher)
-		.addOption(trace)
-		.addOption(tail)
+		.addOption(quietOption)
+		.addOption(debugOption)
+		.addOption(debugWatcherOption)
+		.addOption(traceOption)
+		.addOption(tailOption)
 		.addOption(signatureLengthOption)
-		.addOption(configOption);	
+		.addOption(configOption)
+		.addOption(logfileOption)
+		.addOption(logfileNumberOption)
+		.addOption(logfileSizeOption);
+		
 		CommandLineParser parser = new GnuParser();
 		try {
 			CommandLine line = parser.parse(options, args);
@@ -197,6 +217,15 @@ public class Forwarder {
 			if(line.hasOption("tail")) {
 				tailSelected = true;
 			}
+			if(line.hasOption("logfile")) {
+				logfile = line.getOptionValue("logfile");
+			}
+			if(line.hasOption("logfilesize")) {
+				logfileSize = line.getOptionValue("logfilesize");
+			}
+			if(line.hasOption("logfilenumber")) {
+				logfileNumber = Integer.parseInt(line.getOptionValue("logfilenumber"));
+			}
 		} catch(ParseException e) {
 			printHelp(options);
 			System.exit(1);;
@@ -212,9 +241,17 @@ public class Forwarder {
 		formatter.printHelp("logstash-forwarder", options);
 	}
 
-	private static void setupLogging() {
+	private static void setupLogging() throws IOException {
+		Appender appender;
 		Layout layout = new PatternLayout("%d %p %c{1} - %m%n");
-		Appender appender = new ConsoleAppender(layout);
+		if(logfile == null) {
+			appender = new ConsoleAppender(layout);
+		} else {
+			RollingFileAppender rolling = new RollingFileAppender(layout, logfile, true);
+			rolling.setMaxFileSize(logfileSize);
+			rolling.setMaxBackupIndex(logfileNumber);
+			appender = rolling;
+		}
 		BasicConfigurator.configure(appender);
 		RootLogger.getRootLogger().setLevel(logLevel);
 		if(debugWatcherSelected) {
