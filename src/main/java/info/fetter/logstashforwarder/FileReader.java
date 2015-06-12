@@ -53,7 +53,12 @@ public class FileReader extends Reader {
 			eventCount += readFile(state, spoolSize - eventCount);
 		}
 		if(eventCount > 0) {
-			adapter.sendEvents(eventList);
+			try {
+				adapter.sendEvents(eventList);
+			} catch(AdapterException e) {
+				eventList.clear(); // Be sure no events will be sent twice after reconnect
+				throw e;
+			}
 		}
 		for(FileState state : fileList) {
 			state.setPointer(pointerMap.get(state.getFile()));
