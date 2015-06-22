@@ -298,7 +298,8 @@ public class FileWatcher {
 	public void onFileDelete(File file) {
 		try {
 			logger.debug("Delete detected on file : " + file.getCanonicalPath());
-			oldWatchMap.get(file).setDeleted();
+			FileState state = oldWatchMap.get(file);
+			if (state != null) state.setDeleted();
 		} catch (IOException e) {
 			logger.error("Caught IOException : " + e.getMessage());
 		}
