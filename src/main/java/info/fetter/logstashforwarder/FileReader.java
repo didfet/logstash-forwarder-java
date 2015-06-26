@@ -70,23 +70,34 @@ public class FileReader extends Reader {
 	private int readFile(FileState state, int spaceLeftInSpool) {
 		File file = state.getFile();
 		long pointer = state.getPointer();
-		if(state.isDeleted() || state.getRandomAccessFile() == null) { // Don't try to read this file
-			pointerMap.put(file, pointer);
-			return 0;
-		} else {
-			int eventListSizeBefore = eventList.size();
-			if(logger.isTraceEnabled()) {
-				logger.trace("File : " + file + " pointer : " + pointer);
-				logger.trace("Space left in spool : " + spaceLeftInSpool);
-			}
-			if(isCompressedFile(state)) {
-				pointer = file.length();
+		int numberOfEvents = 0;
+		try {
+			if(state.isDeleted() || state.getRandomAccessFile() == null) { // Don't try to read this file
+				if(logger.isTraceEnabled()) {
+					logger.trace("File : " + file + " has been deleted");
+				}
+			} else if(state.getRandomAccessFile().length() == 0) {
+				if(logger.isTraceEnabled()) {
+					logger.trace("File : " + file + " is empty");
+				}
 			} else {
-				pointer = readLines(state, spaceLeftInSpool);
+				int eventListSizeBefore = eventList.size();
+				if(logger.isTraceEnabled()) {
+					logger.trace("File : " + file + " pointer : " + pointer);
+					logger.trace("Space left in spool : " + spaceLeftInSpool);
+				}
+				if(isCompressedFile(state)) {
+					pointer = file.length();
+				} else {
+					pointer = readLines(state, spaceLeftInSpool);
+				}
+				numberOfEvents = eventList.size() - eventListSizeBefore; 
 			}
-			pointerMap.put(file, pointer);
-			return eventList.size() - eventListSizeBefore; // Return number of events read
+		} catch(IOException e) {
+			logger.warn("Exception raised while reading file : " + state.getFile(), e);
 		}
+		pointerMap.put(file, pointer);
+		return numberOfEvents; // Return number of events read
 	}
 
 	private boolean isCompressedFile(FileState state) {
@@ -105,8 +116,7 @@ public class FileReader extends Reader {
 				}
 			}
 		} catch(IOException e) {
-			logger.warn("Exception raised while reading file : " + state.getFile());
-			e.printStackTrace();
+			logger.warn("Exception raised while reading file : " + state.getFile(), e);
 		}
 		return false;
 	}
@@ -129,8 +139,7 @@ public class FileReader extends Reader {
 			}
 			reader.seek(pos); // Ensure we can re-read if necessary
 		} catch(IOException e) {
-			logger.warn("Exception raised while reading file : " + state.getFile());
-			e.printStackTrace();
+			logger.warn("Exception raised while reading file : " + state.getFile(), e);
 		}
 		return pos;
 	}
