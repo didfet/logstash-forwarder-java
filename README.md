@@ -58,4 +58,7 @@ There are a few more options :
   - debug : turn on debug logging level
   - trace : turn on trace logging level
   - signaturelength : size of the block used to compute the checksum
+  - logfile : send logs to this file instead of stdout
+  - logfilesize : maximum size of each log file (default 10M)
+  - logfilenumber : number of rotated log files (default 5)
 

@@ -63,7 +63,7 @@ public class Forwarder {
 	private static int signatureLength = 4096;
 	private static boolean tailSelected = false;
 	private static String logfile = null;
-	private static String logfileSize = "10M";
+	private static String logfileSize = "10MB";
 	private static int logfileNumber = 5;
 
 	public static void main(String[] args) {
