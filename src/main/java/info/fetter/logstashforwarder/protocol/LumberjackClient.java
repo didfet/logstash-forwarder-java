@@ -67,6 +67,13 @@ public class LumberjackClient implements ProtocolAdapter {
 		this.port = port;
 
 		try {
+			if(keyStorePath == null) {
+				throw new IOException("Key store not configured");
+			}
+			if(server == null) {
+				throw new IOException("Server address not configured");
+			}
+			
 			keyStore = KeyStore.getInstance("JKS");
 			keyStore.load(new FileInputStream(keyStorePath), null);
 

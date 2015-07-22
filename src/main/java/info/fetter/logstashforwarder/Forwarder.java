@@ -128,7 +128,11 @@ public class Forwarder {
 				fileReader.setAdapter(adapter);
 				inputReader.setAdapter(adapter);
 			} catch(Exception ex) {
-				logger.error("Failed to connect to server " + serverList.get(randomServerIndex) + " : ",ex);
+				if(logger.isDebugEnabled()) {
+					logger.error("Failed to connect to server " + serverList.get(randomServerIndex) + " : ", ex);
+				} else {
+					logger.error("Failed to connect to server " + serverList.get(randomServerIndex) + " : " + ex.getMessage());
+				}
 				try {
 					Thread.sleep(networkTimeout);
 				} catch (InterruptedException e) {
