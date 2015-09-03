@@ -44,7 +44,6 @@ public class FileReader extends Reader {
 
 	public int readFiles(Collection<FileState> fileList) throws AdapterException {
 		int eventCount = 0;
-		stringBuilder = new StringBuilder(STRINGBUILDER_INITIAL_CAPACITY);
 		if(logger.isTraceEnabled()) {
 			logger.trace("Reading " + fileList.size() + " file(s)");
 		}
@@ -126,10 +125,10 @@ public class FileReader extends Reader {
 		long pos = state.getPointer();
 		try {
 			reader.seek(pos);
-			String line = readLine(reader);
+			byte[] line = readLine(reader);
 			while (line != null && spaceLeftInSpool > 0) {
 				if(logger.isTraceEnabled()) {
-					logger.trace("-- Read line : " + line);
+					logger.trace("-- Read line : " + new String(line));
 					logger.trace("-- Space left in spool : " + spaceLeftInSpool);
 				}
 				pos = reader.getFilePointer();
@@ -144,23 +143,26 @@ public class FileReader extends Reader {
 		return pos;
 	}
 
-	private String readLine(RandomAccessFile reader) throws IOException {
-		stringBuilder.setLength(0);
+	private byte[] readLine(RandomAccessFile reader) throws IOException {
+		byteBuffer.clear();
 		int ch;
 		boolean seenCR = false;
 		while((ch=reader.read()) != -1) {
 			switch(ch) {
 			case '\n':
-				return stringBuilder.toString();
+				byte[] line = new byte[byteBuffer.position()];
+				byteBuffer.rewind();
+				byteBuffer.get(line);
+				return line;
 			case '\r':
 				seenCR = true;
 				break;
 			default:
 				if (seenCR) {
-					stringBuilder.append('\r');
+					byteBuffer.put((byte) '\r');
 					seenCR = false;
 				}
-				stringBuilder.append((char)ch); // add character, not its ascii value
+				byteBuffer.put((byte)ch);
 			}
 		}
 		return null;

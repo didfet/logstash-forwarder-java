@@ -35,7 +35,6 @@ public class InputReader extends Reader {
 	public InputReader(int spoolSize, InputStream in) {
 		super(spoolSize);
 		reader = new BufferedReader(new InputStreamReader(in));
-		stringBuilder = new StringBuilder(STRINGBUILDER_INITIAL_CAPACITY);
 	}
 	
 	public int readInput() throws AdapterException, IOException {
@@ -54,35 +53,36 @@ public class InputReader extends Reader {
 	
 	private int readLines() throws IOException {
 		int lineCount = 0;
-		String line;
+		byte[] line;
 		while(lineCount < spoolSize && (line = readLine()) != null) {
-			position += line.length();
+			position += line.length;
 			lineCount++;
 			addEvent("stdin", fields, position, line);
 		}
 		return lineCount;
 	}
 	
-	private String readLine() throws IOException {
+	private byte[] readLine() throws IOException {
 		int ch;
 		boolean seenCR = false;
-		String line;
 		while(reader.ready()) {
 			ch=reader.read();
 			switch(ch) {
 			case '\n':
-				line = stringBuilder.toString();
-				stringBuilder.setLength(0);
+				byte[] line = new byte[byteBuffer.position()];
+				byteBuffer.rewind();
+				byteBuffer.get(line);
+				byteBuffer.clear();
 				return line;
 			case '\r':
 				seenCR = true;
 				break;
 			default:
 				if (seenCR) {
-					stringBuilder.append('\r');
+					byteBuffer.put((byte) '\r');
 					seenCR = false;
 				}
-				stringBuilder.append((char)ch); // add character, not its ascii value
+				byteBuffer.put((byte)ch);
 			}
 		}
 		return null;

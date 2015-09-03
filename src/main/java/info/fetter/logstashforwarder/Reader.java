@@ -21,6 +21,7 @@ package info.fetter.logstashforwarder;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,8 +30,8 @@ public abstract class Reader {
 	protected ProtocolAdapter adapter;
 	protected int spoolSize = 0;
 	protected List<Event> eventList;
-	protected final int STRINGBUILDER_INITIAL_CAPACITY = 1000;
-	protected StringBuilder stringBuilder;
+	protected final int BYTEBUFFER_CAPACITY = 1024 * 1024;
+	protected ByteBuffer byteBuffer = ByteBuffer.allocate(BYTEBUFFER_CAPACITY);
 	private String hostname;
 	{
 		try {
@@ -49,6 +50,19 @@ public abstract class Reader {
 		addEvent(state.getFile().getCanonicalPath(), state.getFields(), pos, line);
 	}
 	
+	protected void addEvent(FileState state, long pos, byte[] line) throws IOException {
+		addEvent(state.getFile().getCanonicalPath(), state.getFields(), pos, line);
+	}
+	
+	protected void addEvent(String fileName, Event fields, long pos, byte[] line) throws IOException {
+		Event event = new Event(fields);
+		event.addField("file", fileName)
+		.addField("offset", pos)
+		.addField("line", line)
+		.addField("host", hostname);
+		eventList.add(event);
+	}
+
 	protected void addEvent(String fileName, Event fields, long pos, String line) throws IOException {
 		Event event = new Event(fields);
 		event.addField("file", fileName)

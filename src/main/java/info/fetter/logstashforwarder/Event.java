@@ -17,6 +17,7 @@ package info.fetter.logstashforwarder;
  *
  */
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,7 +33,7 @@ public class Event {
 		}
 	}
 	
-	public Event(Map<String,String> fields) {
+	public Event(Map<String,String> fields) throws UnsupportedEncodingException {
 		for(String key : fields.keySet()) {
 			addField(key, fields.get(key));
 		}
@@ -43,12 +44,12 @@ public class Event {
 		return this;
 	}
 	
-	public Event addField(String key, String value) {
+	public Event addField(String key, String value) throws UnsupportedEncodingException {
 		keyValues.put(key, value.getBytes());
 		return this;
 	}
 	
-	public Event addField(String key, long value) {
+	public Event addField(String key, long value) throws UnsupportedEncodingException {
 		keyValues.put(key, String.valueOf(value).getBytes());
 		return this;
 	}
