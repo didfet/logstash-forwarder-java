@@ -47,6 +47,7 @@ import org.apache.log4j.RollingFileAppender;
 import org.apache.log4j.spi.RootLogger;
 
 public class Forwarder {
+	private static final String SINCEDB = ".logstash-forwarder-java";
 	private static Logger logger = Logger.getLogger(Forwarder.class);
 	private static int spoolSize = 1024;
 	private static int idleTimeout = 5000;
@@ -65,6 +66,7 @@ public class Forwarder {
 	private static String logfile = null;
 	private static String logfileSize = "10MB";
 	private static int logfileNumber = 5;
+	private static String sincedbFile = SINCEDB;
 
 	public static void main(String[] args) {
 		try {
@@ -73,6 +75,7 @@ public class Forwarder {
 			watcher = new FileWatcher();
 			watcher.setMaxSignatureLength(signatureLength);
 			watcher.setTail(tailSelected);
+			watcher.setSincedb(sincedbFile);
 			configManager = new ConfigurationManager(config);
 			configManager.readConfiguration();
 			for(FilesSection files : configManager.getConfig().getFiles()) {
@@ -181,6 +184,10 @@ public class Forwarder {
 				.hasArg()
 				.withDescription("Number of logfiles (default 5)")
 				.create("logfilenumber");
+		Option sincedbOption = OptionBuilder.withArgName("sincedb file")
+				.hasArg()
+				.withDescription("Sincedb file name")
+				.create("sincedb");
 
 		options.addOption(helpOption)
 		.addOption(idleTimeoutOption)
@@ -194,7 +201,8 @@ public class Forwarder {
 		.addOption(configOption)
 		.addOption(logfileOption)
 		.addOption(logfileNumberOption)
-		.addOption(logfileSizeOption);
+		.addOption(logfileSizeOption)
+		.addOption(sincedbOption);
 		
 		CommandLineParser parser = new GnuParser();
 		try {
@@ -234,6 +242,9 @@ public class Forwarder {
 			}
 			if(line.hasOption("logfilenumber")) {
 				logfileNumber = Integer.parseInt(line.getOptionValue("logfilenumber"));
+			}
+			if(line.hasOption("sincedb")) {
+				sincedbFile = line.getOptionValue("sincedb");
 			}
 		} catch(ParseException e) {
 			printHelp(options);

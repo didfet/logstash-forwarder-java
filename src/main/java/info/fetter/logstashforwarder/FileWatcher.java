@@ -46,11 +46,12 @@ public class FileWatcher {
 	private boolean tail = false;
 	private Event stdinFields;
 	private boolean stdinConfigured = false;
+	private String sincedbFile = null;
 
 	public FileWatcher() {
 		try {
 			logger.debug("Loading saved states");
-			savedStates = Registrar.readStateFromJson();
+			savedStates = Registrar.readStateFromJson(sincedbFile);
 		} catch(Exception e) {
 			logger.warn("Could not load saved states : " + e.getMessage());
 		}
@@ -103,7 +104,7 @@ public class FileWatcher {
 		logger.trace("Reading files");
 		logger.trace("==============");
 		int numberOfLinesRead = reader.readFiles(oldWatchMap.values());
-		Registrar.writeStateToJson(oldWatchMap.values());
+		Registrar.writeStateToJson(sincedbFile,oldWatchMap.values());
 		return numberOfLinesRead;
 	}
 
@@ -361,6 +362,10 @@ public class FileWatcher {
 
 	public void setTail(boolean tail) {
 		this.tail = tail;
+	}
+
+	public void setSincedb(String sincedbFile) {
+		this.sincedbFile = sincedbFile;	
 	}
 
 }

@@ -27,7 +27,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Registrar {
-	private static final String SINCEDB = ".logstash-forwarder-java";
+	
 	
 	private static ObjectMapper mapper = new ObjectMapper();
 	
@@ -40,10 +40,6 @@ public class Registrar {
 		return readStateFromJson(new File(file));
 	}
 	
-	public static FileState[] readStateFromJson() throws JsonParseException, JsonMappingException, IOException {
-		return readStateFromJson(SINCEDB);
-	}
-	
 	public static void writeStateToJson(File file, Collection<FileState> stateList) throws JsonGenerationException, JsonMappingException, IOException {
 		mapper.writeValue(file, stateList);
 	}
@@ -52,7 +48,4 @@ public class Registrar {
 		writeStateToJson(new File(file), stateList);
 	}
 	
-	public static void writeStateToJson(Collection<FileState> stateList) throws JsonGenerationException, JsonMappingException, IOException {
-		writeStateToJson(SINCEDB, stateList);
-	}
 }
