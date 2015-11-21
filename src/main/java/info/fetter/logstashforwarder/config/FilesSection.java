@@ -22,9 +22,13 @@ import java.util.Map;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class FilesSection {
 	private List<String> paths;
 	private Map<String,String> fields;
+	@JsonProperty("dead time")
+	private String deadTime = "24h";
 
 	public List<String> getPaths() {
 		return paths;
@@ -41,12 +45,46 @@ public class FilesSection {
 	public void setFields(Map<String, String> fields) {
 		this.fields = fields;
 	}
-	
+
+	public String getDeadTime() {
+		return deadTime;
+	}
+
+	public int getDeadTimeInSeconds() {
+		int deadTimeInSeconds = 0;
+		String remaining = deadTime;
+
+		if(deadTime.contains("h")) {
+			String[] splitByHour = deadTime.split("h",2);
+			if(splitByHour.length > 1) {
+				remaining = splitByHour[1];
+			}
+			deadTimeInSeconds += Integer.parseInt(splitByHour[0]) * 3600;
+		}
+		if(remaining.contains("m")) {
+			String[] splitByMinute = remaining.split("m",2);
+			if(splitByMinute.length > 1) {
+				remaining = splitByMinute[1];
+			}
+			deadTimeInSeconds += Integer.parseInt(splitByMinute[0]) * 60;
+		}
+		if(remaining.contains("s")) {
+			String[] splitBySecond = remaining.split("s",2);
+			deadTimeInSeconds += Integer.parseInt(splitBySecond[0]);
+		}
+		return deadTimeInSeconds;
+	}
+
+	public void setDeadTime(String deadTime) {
+		this.deadTime = deadTime;
+	}
+
 	@Override
 	public String toString() {
-	     return new ToStringBuilder(this).
-	    	       append("paths", paths).
-	    	       append("fields", fields).
-	    	       toString();
+		return new ToStringBuilder(this).
+				append("paths", paths).
+				append("fields", fields).
+				append("dead time", deadTime).
+				toString();
 	}
 }

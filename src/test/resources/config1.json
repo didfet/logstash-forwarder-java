@@ -46,7 +46,14 @@
       "paths": [
         "/var/log/apache/httpd-*.log"
       ],
-      "fields": { "type": "apache" }
+      "fields": { "type": "apache" },
+      "dead time": "12h" 
+    }, {
+      "paths": [
+        "/var/log/apache/error-*.log"
+      ],
+      "fields": { "type": "error" },
+      "dead time": "8h32m50s" 
     }
   ]
 }

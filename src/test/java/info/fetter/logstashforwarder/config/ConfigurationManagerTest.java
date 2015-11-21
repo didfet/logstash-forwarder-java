@@ -18,6 +18,7 @@ package info.fetter.logstashforwarder.config;
  */
 
 import static org.apache.log4j.Level.DEBUG;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,5 +52,19 @@ public class ConfigurationManagerTest {
 		ConfigurationManager manager = new ConfigurationManager(new File(ConfigurationManagerTest.class.getClassLoader().getResource("config1.json").getFile()));
 		manager.readConfiguration();
 		logger.debug(manager.getConfig().toString());
+		for(FilesSection files : manager.getConfig().getFiles()) {
+			logger.debug("File Section");
+			for(String path : files.getPaths()) {
+				logger.debug(" - Path : " + path);
+			}
+			logger.debug(" - Dead time : " + files.getDeadTimeInSeconds());
+			if(files.getDeadTime().equals("24h")) {
+				assertEquals(86400, files.getDeadTimeInSeconds());
+			} else if(files.getDeadTime().equals("12h")) {
+				assertEquals(43200, files.getDeadTimeInSeconds());
+			} else if(files.getDeadTime().equals("8h32m50s")) {
+				assertEquals(30770, files.getDeadTimeInSeconds());
+			}
+		}
 	}
 }
