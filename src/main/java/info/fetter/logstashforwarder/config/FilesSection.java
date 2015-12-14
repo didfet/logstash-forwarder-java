@@ -50,8 +50,8 @@ public class FilesSection {
 		return deadTime;
 	}
 
-	public int getDeadTimeInSeconds() {
-		int deadTimeInSeconds = 0;
+	public long getDeadTimeInSeconds() {
+		long deadTimeInSeconds = 0;
 		String remaining = deadTime;
 
 		if(deadTime.contains("h")) {

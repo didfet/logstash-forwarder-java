@@ -77,7 +77,7 @@ public class FileWatcher {
 		printWatchMap();
 	}
 
-	public void addFilesToWatch(String fileToWatch, Event fields, int deadTime) {
+	public void addFilesToWatch(String fileToWatch, Event fields, long deadTime) {
 		try {
 			if(fileToWatch.equals("-")) {
 				addStdIn(fields);
@@ -220,7 +220,7 @@ public class FileWatcher {
 		removeMarkedFilesFromWatchMap();
 	}
 
-	private void addSingleFile(String fileToWatch, Event fields, int deadTime) throws Exception {
+	private void addSingleFile(String fileToWatch, Event fields, long deadTime) throws Exception {
 		logger.info("Watching file : " + new File(fileToWatch).getCanonicalPath());
 		String directory = FilenameUtils.getFullPath(fileToWatch);
 		String fileName = FilenameUtils.getName(fileToWatch); 
@@ -231,7 +231,7 @@ public class FileWatcher {
 		initializeWatchMap(new File(directory), fileFilter, fields);
 	}
 
-	private void addWildCardFiles(String filesToWatch, Event fields, int deadTime) throws Exception {
+	private void addWildCardFiles(String filesToWatch, Event fields, long deadTime) throws Exception {
 		logger.info("Watching wildcard files : " + filesToWatch);
 		String directory = FilenameUtils.getFullPath(filesToWatch);
 		String wildcard = FilenameUtils.getName(filesToWatch);
