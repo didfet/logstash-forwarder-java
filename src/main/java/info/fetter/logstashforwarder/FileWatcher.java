@@ -48,7 +48,8 @@ public class FileWatcher {
 	private boolean stdinConfigured = false;
 	private String sincedbFile = null;
 
-	public FileWatcher() {
+	public FileWatcher(String sincedbFileName) {
+		sincedbFile = sincedbFileName;
 		try {
 			logger.debug("Loading saved states");
 			savedStates = Registrar.readStateFromJson(sincedbFile);
@@ -363,9 +364,4 @@ public class FileWatcher {
 	public void setTail(boolean tail) {
 		this.tail = tail;
 	}
-
-	public void setSincedb(String sincedbFile) {
-		this.sincedbFile = sincedbFile;	
-	}
-
 }

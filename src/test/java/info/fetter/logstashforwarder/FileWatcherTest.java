@@ -46,7 +46,7 @@ public class FileWatcherTest {
 
 	//@Test
 	public void testFileWatch() throws InterruptedException, IOException {
-		FileWatcher watcher = new FileWatcher();
+		FileWatcher watcher = new FileWatcher(".logstash-forwarder-java");
 		watcher.addFilesToWatch("./test.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY);
 		for(int i = 0; i < 100; i++) {
 			Thread.sleep(1000);
@@ -60,7 +60,7 @@ public class FileWatcherTest {
 			logger.warn("Not executing this test on windows");
 			return;
 		}
-		FileWatcher watcher = new FileWatcher();
+		FileWatcher watcher = new FileWatcher(".logstash-forwarder-java");
 		watcher.addFilesToWatch("./testFileWatcher*.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY);
 		watcher.initialize();
 
