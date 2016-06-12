@@ -48,7 +48,8 @@ public class FileWatcher {
 	private boolean stdinConfigured = false;
 	private String sincedbFile = null;
 
-	public FileWatcher() {
+	public FileWatcher(String sincedbFileName) {
+		sincedbFile = sincedbFileName;
 		try {
 			logger.debug("Loading saved states");
 			savedStates = Registrar.readStateFromJson(sincedbFile);
@@ -76,7 +77,7 @@ public class FileWatcher {
 		printWatchMap();
 	}
 
-	public void addFilesToWatch(String fileToWatch, Event fields, int deadTime, Multiline multiline) {
+	public void addFilesToWatch(String fileToWatch, Event fields, long deadTime, Multiline multiline) {
 		try {
 			if(fileToWatch.equals("-")) {
 				addStdIn(fields);
@@ -219,7 +220,7 @@ public class FileWatcher {
 		removeMarkedFilesFromWatchMap();
 	}
 
-	private void addSingleFile(String fileToWatch, Event fields, int deadTime, Multiline multiline) throws Exception {
+	private void addSingleFile(String fileToWatch, Event fields, long deadTime, Multiline multiline) throws Exception {
 		logger.info("Watching file : " + new File(fileToWatch).getCanonicalPath());
 		String directory = FilenameUtils.getFullPath(fileToWatch);
 		String fileName = FilenameUtils.getName(fileToWatch); 
@@ -230,7 +231,7 @@ public class FileWatcher {
 		initializeWatchMap(new File(directory), fileFilter, fields, multiline);
 	}
 
-	private void addWildCardFiles(String filesToWatch, Event fields, int deadTime, Multiline multiline) throws Exception {
+	private void addWildCardFiles(String filesToWatch, Event fields, long deadTime, Multiline multiline) throws Exception {
 		logger.info("Watching wildcard files : " + filesToWatch);
 		String directory = FilenameUtils.getFullPath(filesToWatch);
 		String wildcard = FilenameUtils.getName(filesToWatch);
@@ -367,6 +368,5 @@ public class FileWatcher {
 
 	public void setSincedb(String sincedbFile) {
 		this.sincedbFile = sincedbFile;	
-	}
-
+        }
 }

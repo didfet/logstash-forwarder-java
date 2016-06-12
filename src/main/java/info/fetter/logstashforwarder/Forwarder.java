@@ -72,10 +72,9 @@ public class Forwarder {
 		try {
 			parseOptions(args);
 			setupLogging();
-			watcher = new FileWatcher();
+			watcher = new FileWatcher(sincedbFile);
 			watcher.setMaxSignatureLength(signatureLength);
 			watcher.setTail(tailSelected);
-			watcher.setSincedb(sincedbFile);
 			configManager = new ConfigurationManager(config);
 			configManager.readConfiguration();
 			for(FilesSection files : configManager.getConfig().getFiles()) {
