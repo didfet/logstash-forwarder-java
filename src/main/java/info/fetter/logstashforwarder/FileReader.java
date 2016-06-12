@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.commons.lang.ArrayUtils;
 
 import org.apache.log4j.Logger;
 
@@ -123,19 +124,62 @@ public class FileReader extends Reader {
 	private long readLines(FileState state, int spaceLeftInSpool) {
 		RandomAccessFile reader = state.getRandomAccessFile();
 		long pos = state.getPointer();
+                Multiline multiline = state.getMultiline();
 		try {
 			reader.seek(pos);
 			byte[] line = readLine(reader);
+                        byte[] bufferedLines = null;
 			while (line != null && spaceLeftInSpool > 0) {
 				if(logger.isTraceEnabled()) {
 					logger.trace("-- Read line : " + new String(line));
 					logger.trace("-- Space left in spool : " + spaceLeftInSpool);
 				}
 				pos = reader.getFilePointer();
-				addEvent(state, pos, line);
+                                if (multiline == null) {
+                                  addEvent(state, pos, line);
+                                }
+                                else {
+                                  if (logger.isTraceEnabled()) {
+                                    logger.trace("-- Multiline : " + multiline);
+                                    logger.trace("-- Multiline : matches " + multiline.isPatternFound(line));
+                                  }
+                                  if (multiline.isPatternFound(line))
+                                  {                                    
+                                    // buffer the line
+                                    if (bufferedLines != null)
+                                    {
+                                      bufferedLines = ArrayUtils.addAll(bufferedLines, line);
+                                    }
+                                    else
+                                    {
+                                      bufferedLines = line;
+                                    }
+                                  }
+                                  else {                                    
+                                    if (multiline.isPrevious()) {
+                                      // did not match, so new event started
+                                      if (bufferedLines != null) {
+                                        addEvent(state, pos, bufferedLines);                                        
+                                      }
+                                      bufferedLines = line;
+                                    }
+                                    else {
+                                      // did not match, add the current line
+                                      if (bufferedLines != null) {
+                                        addEvent(state, pos, ArrayUtils.addAll(bufferedLines, line));                                      
+                                        bufferedLines = null;
+                                      }
+                                      else
+                                        addEvent(state, pos, line);
+                                    }
+                                  }
+                                }
 				line = readLine(reader);
 				spaceLeftInSpool--;
 			}
+                        if (bufferedLines != null) {
+                          addEvent(state, pos, bufferedLines); // send any buffered lines left
+                        }
 			reader.seek(pos); // Ensure we can re-read if necessary
 		} catch(IOException e) {
 			logger.warn("Exception raised while reading file : " + state.getFile(), e);

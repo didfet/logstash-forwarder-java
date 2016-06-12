@@ -25,6 +25,7 @@ import java.io.RandomAccessFile;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.Map;
 
 public class FileState {
 	@JsonIgnore
@@ -48,6 +49,10 @@ public class FileState {
 	private FileState oldFileState;
 	@JsonIgnore
 	private Event fields;
+        @JsonIgnore
+        private Multiline multiline;
+        @JsonIgnore
+        private byte[] bufferedLines = null;
 
 	public FileState() {
 	}
@@ -172,6 +177,22 @@ public class FileState {
 	public void setFields(Event fields) {
 		this.fields = fields;
 	}
+        
+        public Multiline getMultiline() {
+               return multiline;
+        }
+        
+        public void setMultiline(Multiline multiline) {
+               this.multiline = multiline;
+        }
+        
+        public byte[] getBufferedLines() {
+               return bufferedLines;
+        }
+               
+        public void setBufferedLines(byte[] bufferedLines) {
+               this.bufferedLines = bufferedLines;
+        }
 
 	@Override
 	public String toString() {

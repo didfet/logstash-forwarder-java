@@ -57,6 +57,9 @@ public class ConfigurationManagerTest {
 			for(String path : files.getPaths()) {
 				logger.debug(" - Path : " + path);
 			}
+                        logger.debug(" - Multiline : " + files.getMultiline());
+                        //files.getMultiline()
+                                
 			logger.debug(" - Dead time : " + files.getDeadTimeInSeconds());
 			if(files.getDeadTime().equals("24h")) {
 				assertEquals(86400, files.getDeadTimeInSeconds());
