@@ -17,15 +17,16 @@ package info.fetter.logstashforwarder;
  *
  */
 
+import info.fetter.logstashforwarder.util.RandomAccessFile;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 //import java.io.RandomAccessFile;
 
 
-import org.apache.commons.lang.builder.ToStringBuilder;
 
-import ucar.unidata.io.RandomAccessFile;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
