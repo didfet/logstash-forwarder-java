@@ -21,13 +21,15 @@ import info.fetter.logstashforwarder.util.AdapterException;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
+//import java.io.RandomAccessFile;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+
+import ucar.unidata.io.RandomAccessFile;
 
 public class FileReader extends Reader {
 	private static Logger logger = Logger.getLogger(FileReader.class);

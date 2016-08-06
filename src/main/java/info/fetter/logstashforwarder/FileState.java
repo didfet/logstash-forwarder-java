@@ -20,9 +20,12 @@ package info.fetter.logstashforwarder;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
+//import java.io.RandomAccessFile;
+
 
 import org.apache.commons.lang.builder.ToStringBuilder;
+
+import ucar.unidata.io.RandomAccessFile;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -56,7 +59,7 @@ public class FileState {
 		this.file = file;
 		directory = file.getCanonicalFile().getParent();
 		fileName = file.getName();
-		randomAccessFile = new RandomAccessFile(file, "r");
+		randomAccessFile = new RandomAccessFile(file.getPath(), "r");
 		lastModified = file.lastModified();
 		size = file.length();
 	}

@@ -1,8 +1,10 @@
 package info.fetter.logstashforwarder;
 
 import java.io.IOException;
-import java.io.RandomAccessFile;
+//import java.io.RandomAccessFile;
 import java.util.zip.Adler32;
+
+import ucar.unidata.io.RandomAccessFile;
 
 public class FileSigner {
 	private static final Adler32 adler32 = new Adler32();
