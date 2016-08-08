@@ -53,7 +53,7 @@ public class FileWatcher {
 			logger.debug("Loading saved states");
 			savedStates = Registrar.readStateFromJson(sincedbFile);
 		} catch(Exception e) {
-			logger.warn("Could not load saved states : " + e.getMessage());
+			logger.warn("Could not load saved states : " + e.getMessage(), e);
 		}
 	}
 
