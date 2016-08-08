@@ -49,12 +49,6 @@ public class FileWatcher {
 	private String sincedbFile = null;
 
 	public FileWatcher() {
-		try {
-			logger.debug("Loading saved states");
-			savedStates = Registrar.readStateFromJson(sincedbFile);
-		} catch(Exception e) {
-			logger.warn("Could not load saved states : " + e.getMessage(), e);
-		}
 	}
 
 	public void initialize() throws IOException {
@@ -365,7 +359,13 @@ public class FileWatcher {
 	}
 
 	public void setSincedb(String sincedbFile) {
-		this.sincedbFile = sincedbFile;	
+		this.sincedbFile = sincedbFile;
+		try {
+			logger.debug("Loading saved states");
+			savedStates = Registrar.readStateFromJson(sincedbFile);
+		} catch(Exception e) {
+			logger.warn("Could not load saved states : " + e.getMessage(), e);
+		}
 	}
 
 }
