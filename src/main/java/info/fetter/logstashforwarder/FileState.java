@@ -52,6 +52,8 @@ public class FileState {
 	private FileState oldFileState;
 	@JsonIgnore
 	private Event fields;
+	@JsonIgnore
+	private boolean matchedToNewFile = false;
 
 	public FileState() {
 	}
@@ -160,6 +162,7 @@ public class FileState {
 
 	public void setOldFileState(FileState oldFileState) {
 		this.oldFileState = oldFileState;
+		oldFileState.setMatchedToNewFile(true);
 	}
 	
 	public void deleteOldFileState() {
@@ -175,6 +178,14 @@ public class FileState {
 
 	public void setFields(Event fields) {
 		this.fields = fields;
+	}
+	
+	public boolean isMatchedToNewFile() {
+		return matchedToNewFile;
+	}
+
+	public void setMatchedToNewFile(boolean matchedToNewFile) {
+		this.matchedToNewFile = matchedToNewFile;
 	}
 
 	@Override
