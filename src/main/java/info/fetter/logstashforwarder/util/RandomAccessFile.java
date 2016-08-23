@@ -344,7 +344,7 @@ public class RandomAccessFile implements DataInput, DataOutput {
 
     // Close the underlying file object.
     file.close();
-    file = null;  // help the gc
+    //file = null;  // help the gc => commented because of problems with nullpointerexceptions when trying to read after close
   }
 
   /**
