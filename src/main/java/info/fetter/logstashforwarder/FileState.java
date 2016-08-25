@@ -17,10 +17,14 @@ package info.fetter.logstashforwarder;
  *
  */
 
+import info.fetter.logstashforwarder.util.RandomAccessFile;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
+//import java.io.RandomAccessFile;
+
+
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 
@@ -48,6 +52,8 @@ public class FileState {
 	private FileState oldFileState;
 	@JsonIgnore
 	private Event fields;
+	@JsonIgnore
+	private boolean matchedToNewFile = false;
 
 	public FileState() {
 	}
@@ -56,7 +62,7 @@ public class FileState {
 		this.file = file;
 		directory = file.getCanonicalFile().getParent();
 		fileName = file.getName();
-		randomAccessFile = new RandomAccessFile(file, "r");
+		randomAccessFile = new RandomAccessFile(file.getPath(), "r");
 		lastModified = file.lastModified();
 		size = file.length();
 	}
@@ -156,6 +162,7 @@ public class FileState {
 
 	public void setOldFileState(FileState oldFileState) {
 		this.oldFileState = oldFileState;
+		oldFileState.setMatchedToNewFile(true);
 	}
 	
 	public void deleteOldFileState() {
@@ -171,6 +178,14 @@ public class FileState {
 
 	public void setFields(Event fields) {
 		this.fields = fields;
+	}
+	
+	public boolean isMatchedToNewFile() {
+		return matchedToNewFile;
+	}
+
+	public void setMatchedToNewFile(boolean matchedToNewFile) {
+		this.matchedToNewFile = matchedToNewFile;
 	}
 
 	@Override

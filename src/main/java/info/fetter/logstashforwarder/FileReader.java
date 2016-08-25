@@ -18,16 +18,18 @@ package info.fetter.logstashforwarder;
  */
 
 import info.fetter.logstashforwarder.util.AdapterException;
+import info.fetter.logstashforwarder.util.RandomAccessFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
+//import java.io.RandomAccessFile;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+
 
 public class FileReader extends Reader {
 	private static Logger logger = Logger.getLogger(FileReader.class);
