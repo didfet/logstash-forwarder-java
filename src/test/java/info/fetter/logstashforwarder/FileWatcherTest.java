@@ -18,9 +18,15 @@ package info.fetter.logstashforwarder;
  */
 
 import static org.apache.log4j.Level.*;
+import info.fetter.logstashforwarder.config.FilesSection;
+import info.fetter.logstashforwarder.config.Parameters;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.BasicConfigurator;
@@ -47,7 +53,15 @@ public class FileWatcherTest {
 	//@Test
 	public void testFileWatch() throws InterruptedException, IOException {
 		FileWatcher watcher = new FileWatcher();
-		watcher.addFilesToWatch("./test.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY);
+		FilesSection files = new FilesSection();
+		Map<String,String> fields = new HashMap<String, String>();
+		List<String> paths = new ArrayList<String>();
+		fields.put("test", "test");
+		paths.add("./test.txt");
+		files.setFields(fields);
+		files.setPaths(paths);
+		files.setDeadTime("24h");
+		watcher.addFilesToWatch(files);
 		for(int i = 0; i < 100; i++) {
 			Thread.sleep(1000);
 			watcher.checkFiles();
@@ -61,7 +75,16 @@ public class FileWatcherTest {
 			return;
 		}
 		FileWatcher watcher = new FileWatcher();
-		watcher.addFilesToWatch("./testFileWatcher*.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY);
+		FilesSection files = new FilesSection();
+		Map<String,String> fields = new HashMap<String, String>();
+		List<String> paths = new ArrayList<String>();
+		fields.put("test", "test");
+		paths.add("./testFileWatcher*.txt");
+		files.setFields(fields);
+		files.setPaths(paths);
+		files.setDeadTime("24h");
+		watcher.addFilesToWatch(files);
+		watcher.setParameters(new Parameters());
 		watcher.initialize();
 
 		File file1 = new File("testFileWatcher1.txt");

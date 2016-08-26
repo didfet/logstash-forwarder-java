@@ -25,67 +25,48 @@ import java.util.Random;
 
 import info.fetter.logstashforwarder.config.ConfigurationManager;
 import info.fetter.logstashforwarder.config.FilesSection;
+import info.fetter.logstashforwarder.config.Parameters;
+import info.fetter.logstashforwarder.config.ParametersManager;
 import info.fetter.logstashforwarder.protocol.LumberjackClient;
 import info.fetter.logstashforwarder.util.AdapterException;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.apache.log4j.Appender;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Layout;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.apache.log4j.RollingFileAppender;
 import org.apache.log4j.spi.RootLogger;
 
 public class Forwarder {
-	private static final String SINCEDB = ".logstash-forwarder-java";
 	private static Logger logger = Logger.getLogger(Forwarder.class);
-	private static int spoolSize = 1024;
-	private static int idleTimeout = 5000;
-	private static int networkTimeout = 15000;
-	private static String config;
 	private static ConfigurationManager configManager;
-	private static FileWatcher watcher;
+	private static FileWatcher fileWatcher;
 	private static FileReader fileReader;
+	private static InputWatcher inputWatcher;
 	private static InputReader inputReader;
-	private static Level logLevel = INFO;
-	private static boolean debugWatcherSelected = false;
 	private static ProtocolAdapter adapter;
 	private static Random random = new Random();
-	private static int signatureLength = 4096;
-	private static boolean tailSelected = false;
-	private static String logfile = null;
-	private static String logfileSize = "10MB";
-	private static int logfileNumber = 5;
-	private static String sincedbFile = SINCEDB;
+	private static Parameters parameters;
+	private static int networkTimeout = 15000;
 
 	public static void main(String[] args) {
 		try {
-			parseOptions(args);
+			parameters = ParametersManager.parseOptions(args);
 			setupLogging();
-			watcher = new FileWatcher();
-			watcher.setMaxSignatureLength(signatureLength);
-			watcher.setTail(tailSelected);
-			watcher.setSincedb(sincedbFile);
-			configManager = new ConfigurationManager(config);
+			fileWatcher = new FileWatcher();
+			fileWatcher.setParameters(parameters);
+			inputWatcher = new InputWatcher();
+			configManager = new ConfigurationManager(parameters.getConfigFile());
 			configManager.readConfiguration();
 			for(FilesSection files : configManager.getConfig().getFiles()) {
-				for(String path : files.getPaths()) {
-					watcher.addFilesToWatch(path, new Event(files.getFields()), files.getDeadTimeInSeconds() * 1000);
-				}
+				inputWatcher.addFilesToWatch(files);
+				fileWatcher.addFilesToWatch(files);
 			}
-			watcher.initialize();
-			fileReader = new FileReader(spoolSize);
-			inputReader = new InputReader(spoolSize, System.in);
+			fileWatcher.initialize();
+			fileReader = new FileReader(parameters.getSpoolSize());
+			inputReader = new InputReader(parameters.getSpoolSize(), System.in);
 			connectToServer();
 			infiniteLoop();
 		} catch(Exception e) {
@@ -97,10 +78,10 @@ public class Forwarder {
 	private static void infiniteLoop() throws IOException, InterruptedException {
 		while(true) {
 			try {
-				watcher.checkFiles();
-				while(watcher.readFiles(fileReader) == spoolSize);
-				while(watcher.readStdin(inputReader) == spoolSize);
-				Thread.sleep(idleTimeout);
+				fileWatcher.checkFiles();
+				while(fileWatcher.readFiles(fileReader) == parameters.getSpoolSize());
+				while(inputWatcher.readStdin(inputReader) == parameters.getSpoolSize());
+				Thread.sleep(parameters.getIdleTimeout());
 			} catch(AdapterException e) {
 				logger.error("Lost server connection");
 				Thread.sleep(networkTimeout);
@@ -145,136 +126,22 @@ public class Forwarder {
 		}
 	}
 
-	@SuppressWarnings("static-access")
-	static void parseOptions(String[] args) {
-		Options options = new Options();
-		Option helpOption = new Option("help", "print this message");
-		Option quietOption = new Option("quiet", "operate in quiet mode - only emit errors to log");
-		Option debugOption = new Option("debug", "operate in debug mode");
-		Option debugWatcherOption = new Option("debugwatcher", "operate watcher in debug mode");
-		Option traceOption = new Option("trace", "operate in trace mode");
-		Option tailOption = new Option("tail", "read new files from the end");
 
-		Option spoolSizeOption = OptionBuilder.withArgName("number of events")
-				.hasArg()
-				.withDescription("event count spool threshold - forces network flush")
-				.create("spoolsize");
-		Option idleTimeoutOption = OptionBuilder.withArgName("")
-				.hasArg()
-				.withDescription("time between file reads in seconds")
-				.create("idletimeout");
-		Option configOption = OptionBuilder.withArgName("config file")
-				.hasArg()
-				.isRequired()
-				.withDescription("path to logstash-forwarder configuration file")
-				.create("config");
-		Option signatureLengthOption = OptionBuilder.withArgName("signature length")
-				.hasArg()
-				.withDescription("Maximum length of file signature")
-				.create("signaturelength");
-		Option logfileOption = OptionBuilder.withArgName("logfile name")
-				.hasArg()
-				.withDescription("Logfile name")
-				.create("logfile");
-		Option logfileSizeOption = OptionBuilder.withArgName("logfile size")
-				.hasArg()
-				.withDescription("Logfile size (default 10M)")
-				.create("logfilesize");
-		Option logfileNumberOption = OptionBuilder.withArgName("number of logfiles")
-				.hasArg()
-				.withDescription("Number of logfiles (default 5)")
-				.create("logfilenumber");
-		Option sincedbOption = OptionBuilder.withArgName("sincedb file")
-				.hasArg()
-				.withDescription("Sincedb file name")
-				.create("sincedb");
-
-		options.addOption(helpOption)
-		.addOption(idleTimeoutOption)
-		.addOption(spoolSizeOption)
-		.addOption(quietOption)
-		.addOption(debugOption)
-		.addOption(debugWatcherOption)
-		.addOption(traceOption)
-		.addOption(tailOption)
-		.addOption(signatureLengthOption)
-		.addOption(configOption)
-		.addOption(logfileOption)
-		.addOption(logfileNumberOption)
-		.addOption(logfileSizeOption)
-		.addOption(sincedbOption);
-		
-		CommandLineParser parser = new GnuParser();
-		try {
-			CommandLine line = parser.parse(options, args);
-			if(line.hasOption("spoolsize")) {
-				spoolSize = Integer.parseInt(line.getOptionValue("spoolsize"));
-			}
-			if(line.hasOption("idletimeout")) {
-				idleTimeout = Integer.parseInt(line.getOptionValue("idletimeout"));
-			}
-			if(line.hasOption("config")) {
-				config = line.getOptionValue("config");
-			}
-			if(line.hasOption("signaturelength")) {
-				signatureLength = Integer.parseInt(line.getOptionValue("signaturelength"));
-			}
-			if(line.hasOption("quiet")) {
-				logLevel = ERROR;
-			}
-			if(line.hasOption("debug")) {
-				logLevel = DEBUG;
-			}
-			if(line.hasOption("trace")) {
-				logLevel = TRACE;
-			}
-			if(line.hasOption("debugwatcher")) {
-				debugWatcherSelected = true;
-			}
-			if(line.hasOption("tail")) {
-				tailSelected = true;
-			}
-			if(line.hasOption("logfile")) {
-				logfile = line.getOptionValue("logfile");
-			}
-			if(line.hasOption("logfilesize")) {
-				logfileSize = line.getOptionValue("logfilesize");
-			}
-			if(line.hasOption("logfilenumber")) {
-				logfileNumber = Integer.parseInt(line.getOptionValue("logfilenumber"));
-			}
-			if(line.hasOption("sincedb")) {
-				sincedbFile = line.getOptionValue("sincedb");
-			}
-		} catch(ParseException e) {
-			printHelp(options);
-			System.exit(1);;
-		} catch(NumberFormatException e) {
-			System.err.println("Value must be an integer");
-			printHelp(options);
-			System.exit(2);;
-		}
-	}
-
-	private static void printHelp(Options options) {
-		HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp("logstash-forwarder", options);
-	}
 
 	private static void setupLogging() throws IOException {
 		Appender appender;
 		Layout layout = new PatternLayout("%d %p %c{1} - %m%n");
-		if(logfile == null) {
+		if(parameters.getLogfile() == null) {
 			appender = new ConsoleAppender(layout);
 		} else {
-			RollingFileAppender rolling = new RollingFileAppender(layout, logfile, true);
-			rolling.setMaxFileSize(logfileSize);
-			rolling.setMaxBackupIndex(logfileNumber);
+			RollingFileAppender rolling = new RollingFileAppender(layout, parameters.getLogfile(), true);
+			rolling.setMaxFileSize(parameters.getLogfileSize());
+			rolling.setMaxBackupIndex(parameters.getLogfileNumber());
 			appender = rolling;
 		}
 		BasicConfigurator.configure(appender);
-		RootLogger.getRootLogger().setLevel(logLevel);
-		if(debugWatcherSelected) {
+		RootLogger.getRootLogger().setLevel(parameters.getLogLevel());
+		if(parameters.isDebugWatcherSelected()) {
 			Logger.getLogger(FileWatcher.class).addAppender(appender);
 			Logger.getLogger(FileWatcher.class).setLevel(DEBUG);
 			Logger.getLogger(FileWatcher.class).setAdditivity(false);

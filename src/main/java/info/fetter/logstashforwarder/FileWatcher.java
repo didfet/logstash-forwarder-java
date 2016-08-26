@@ -17,6 +17,8 @@ package info.fetter.logstashforwarder;
  *
  */
 
+import info.fetter.logstashforwarder.config.FilesSection;
+import info.fetter.logstashforwarder.config.Parameters;
 import info.fetter.logstashforwarder.util.AdapterException;
 import info.fetter.logstashforwarder.util.LastModifiedFileFilter;
 
@@ -35,18 +37,14 @@ import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.apache.log4j.Logger;
 
-public class FileWatcher {
+public class FileWatcher implements Watcher {
 	private static final Logger logger = Logger.getLogger(FileWatcher.class);
 	private List<FileAlterationObserver> observerList = new ArrayList<FileAlterationObserver>();
 	public static final int ONE_DAY = 24 * 3600 * 1000;
 	private Map<File,FileState> oldWatchMap = new HashMap<File,FileState>();
 	private Map<File,FileState> newWatchMap = new HashMap<File,FileState>();
 	private FileState[] savedStates;
-	private int maxSignatureLength;
-	private boolean tail = false;
-	private Event stdinFields;
-	private boolean stdinConfigured = false;
-	private String sincedbFile = null;
+	private Parameters parameters;
 
 	public FileWatcher() {
 	}
@@ -59,8 +57,8 @@ public class FileWatcher {
 				oldWatchMap.put(state.getFile(), state);
 			}
 		}
-		processModifications();
-		if(tail) {
+		detectModifications();
+		if(parameters.isTailSelected()) {
 			for(FileState state : oldWatchMap.values()) {
 				if(state.getPointer() == 0) {
 					state.setPointer(state.getSize());
@@ -70,14 +68,14 @@ public class FileWatcher {
 		printWatchMap();
 	}
 
-	public void addFilesToWatch(String fileToWatch, Event fields, int deadTime) {
+	public void addFilesToWatch(FilesSection files) {
 		try {
-			if(fileToWatch.equals("-")) {
-				addStdIn(fields);
-			} else if(fileToWatch.contains("*")) {
-				addWildCardFiles(fileToWatch, fields, deadTime);
-			} else {
-				addSingleFile(fileToWatch, fields, deadTime);
+			for(String path : files.getPaths()) {
+				if(path.contains("*")) {
+					addWildCardFiles(path, new Event(files.getFields()), files.getDeadTimeInSeconds() * 1000);
+				} else {
+					addSingleFile(path, new Event(files.getFields()), files.getDeadTimeInSeconds() * 1000);
+				}
 			}
 		} catch(Exception e) {
 			throw new RuntimeException(e);
@@ -90,7 +88,7 @@ public class FileWatcher {
 		for(FileAlterationObserver observer : observerList) {
 			observer.checkAndNotify();
 		}
-		processModifications();
+		detectModifications();
 		printWatchMap();
 	}
 
@@ -98,22 +96,11 @@ public class FileWatcher {
 		logger.trace("Reading files");
 		logger.trace("==============");
 		int numberOfLinesRead = reader.readFiles(oldWatchMap.values());
-		Registrar.writeStateToJson(sincedbFile,oldWatchMap.values());
+		Registrar.writeStateToJson(parameters.getSincedbFile(),oldWatchMap.values());
 		return numberOfLinesRead;
 	}
 
-	public int readStdin(InputReader reader) throws AdapterException, IOException {
-		if(stdinConfigured) {
-			logger.debug("Reading stdin");
-			reader.setFields(stdinFields);
-			int numberOfLinesRead = reader.readInput();
-			return numberOfLinesRead;
-		} else {
-			return 0;
-		}
-	}
-
-	private void processModifications() throws IOException {
+	private void detectModifications() throws IOException {
 
 		for(File file : newWatchMap.keySet()) {
 			FileState state = newWatchMap.get(file);
@@ -246,12 +233,6 @@ public class FileWatcher {
 		initializeWatchMap(new File(directory), fileFilter, fields);
 	}
 
-	private void addStdIn(Event fields) {
-		logger.error("Watching stdin");
-		stdinFields = fields;
-		stdinConfigured = true;
-	}
-
 	private void initializeWatchMap(File directory, IOFileFilter fileFilter, Event fields) throws Exception {
 		if(!directory.isDirectory()) {
 			logger.warn("Directory " + directory + " does not exist");
@@ -271,6 +252,7 @@ public class FileWatcher {
 		try {
 			FileState state = new FileState(file);
 			state.setFields(fields);
+			int maxSignatureLength = parameters.getSignatureLength();
 			int signatureLength = (int) (state.getSize() > maxSignatureLength ? maxSignatureLength : state.getSize());
 			state.setSignatureLength(signatureLength);
 			long signature = FileSigner.computeSignature(state.getRandomAccessFile(), signatureLength);
@@ -356,23 +338,21 @@ public class FileWatcher {
 		}
 	}
 
-	public int getMaxSignatureLength() {
-		return maxSignatureLength;
+	/**
+	 * @return the parameters
+	 */
+	public Parameters getParameters() {
+		return parameters;
 	}
 
-	public void setMaxSignatureLength(int maxSignatureLength) {
-		this.maxSignatureLength = maxSignatureLength;
-	}
-
-	public void setTail(boolean tail) {
-		this.tail = tail;
-	}
-
-	public void setSincedb(String sincedbFile) {
-		this.sincedbFile = sincedbFile;
+	/**
+	 * @param parameters the parameters to set
+	 */
+	public void setParameters(Parameters parameters) {
+		this.parameters = parameters;
 		try {
 			logger.debug("Loading saved states");
-			savedStates = Registrar.readStateFromJson(sincedbFile);
+			savedStates = Registrar.readStateFromJson(parameters.getSincedbFile());
 		} catch(Exception e) {
 			logger.warn("Could not load saved states : " + e.getMessage(), e);
 		}
