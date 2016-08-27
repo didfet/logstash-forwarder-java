@@ -45,6 +45,7 @@ public class FileWatcher implements Watcher {
 	private Map<File,FileState> newWatchMap = new HashMap<File,FileState>();
 	private FileState[] savedStates;
 	private Parameters parameters;
+	private FileReader reader;
 
 	public FileWatcher() {
 	}
@@ -90,14 +91,6 @@ public class FileWatcher implements Watcher {
 		}
 		detectModifications();
 		printWatchMap();
-	}
-
-	public int readFiles(FileReader reader) throws IOException, AdapterException {
-		logger.trace("Reading files");
-		logger.trace("==============");
-		int numberOfLinesRead = reader.readFiles(oldWatchMap.values());
-		Registrar.writeStateToJson(parameters.getSincedbFile(),oldWatchMap.values());
-		return numberOfLinesRead;
 	}
 
 	private void detectModifications() throws IOException {
@@ -356,6 +349,19 @@ public class FileWatcher implements Watcher {
 		} catch(Exception e) {
 			logger.warn("Could not load saved states : " + e.getMessage(), e);
 		}
+		reader = new FileReader(parameters.getSpoolSize());
+	}
+
+	public Reader getReader() {
+		return reader;
+	}
+	
+	public int readFiles() throws IOException, AdapterException {
+		logger.trace("Reading files");
+		logger.trace("==============");
+		int numberOfLinesRead = reader.readFiles(oldWatchMap.values());
+		Registrar.writeStateToJson(parameters.getSincedbFile(),oldWatchMap.values());
+		return numberOfLinesRead;
 	}
 
 }

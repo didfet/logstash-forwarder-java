@@ -43,9 +43,7 @@ public class Forwarder {
 	private static Logger logger = Logger.getLogger(Forwarder.class);
 	private static ConfigurationManager configManager;
 	private static FileWatcher fileWatcher;
-	private static FileReader fileReader;
 	private static InputWatcher inputWatcher;
-	private static InputReader inputReader;
 	private static ProtocolAdapter adapter;
 	private static Random random = new Random();
 	private static Parameters parameters;
@@ -65,8 +63,6 @@ public class Forwarder {
 				fileWatcher.addFilesToWatch(files);
 			}
 			fileWatcher.initialize();
-			fileReader = new FileReader(parameters.getSpoolSize());
-			inputReader = new InputReader(parameters.getSpoolSize(), System.in);
 			connectToServer();
 			infiniteLoop();
 		} catch(Exception e) {
@@ -79,8 +75,8 @@ public class Forwarder {
 		while(true) {
 			try {
 				fileWatcher.checkFiles();
-				while(fileWatcher.readFiles(fileReader) == parameters.getSpoolSize());
-				while(inputWatcher.readStdin(inputReader) == parameters.getSpoolSize());
+				while(fileWatcher.readFiles() == parameters.getSpoolSize());
+				while(inputWatcher.readFiles() == parameters.getSpoolSize());
 				Thread.sleep(parameters.getIdleTimeout());
 			} catch(AdapterException e) {
 				logger.error("Lost server connection");
@@ -109,8 +105,8 @@ public class Forwarder {
 				String[] serverAndPort = serverList.get(randomServerIndex).split(":");
 				logger.info("Trying to connect to " + serverList.get(randomServerIndex));
 				adapter = new LumberjackClient(configManager.getConfig().getNetwork().getSslCA(),serverAndPort[0],Integer.parseInt(serverAndPort[1]), networkTimeout);
-				fileReader.setAdapter(adapter);
-				inputReader.setAdapter(adapter);
+				fileWatcher.getReader().setAdapter(adapter);
+				inputWatcher.getReader().setAdapter(adapter);
 			} catch(Exception ex) {
 				if(logger.isDebugEnabled()) {
 					logger.error("Failed to connect to server " + serverList.get(randomServerIndex) + " : ", ex);
