@@ -325,6 +325,7 @@ public class FileWatcher {
 		List<File> markedList = null;
 		for(File file : oldWatchMap.keySet()) {
 			FileState state = oldWatchMap.get(file);
+			state.setMatchedToNewFile(false);
 			if(state.getRandomAccessFile() == null) {
 				state.setDeleted();
 			}
