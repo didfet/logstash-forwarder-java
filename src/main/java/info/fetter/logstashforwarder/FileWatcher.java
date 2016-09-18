@@ -48,14 +48,7 @@ public class FileWatcher {
 	private boolean stdinConfigured = false;
 	private String sincedbFile = null;
 
-	public FileWatcher(String sincedbFileName) {
-		sincedbFile = sincedbFileName;
-		try {
-			logger.debug("Loading saved states");
-			savedStates = Registrar.readStateFromJson(sincedbFile);
-		} catch(Exception e) {
-			logger.warn("Could not load saved states : " + e.getMessage());
-		}
+	public FileWatcher() {
 	}
 
 	public void initialize() throws IOException {
@@ -194,6 +187,16 @@ public class FileWatcher {
 			if(oldState == null) {
 				if(logger.isDebugEnabled()) {
 					logger.debug("File " + state.getFile() + " has been truncated or created, not retrieving pointer");
+				}
+				oldState = oldWatchMap.get(state.getFile());
+				if(oldState != null && ! oldState.isMatchedToNewFile()) {
+					if(logger.isDebugEnabled()) {
+						logger.debug("File " + state.getFile() + " has been replaced and not renamed, removing from watchMap");
+					}
+					try {
+						oldState.getRandomAccessFile().close();
+					} catch(Exception e) {}
+					oldWatchMap.remove(state.getFile());
 				}
 			} else {
 				if(logger.isInfoEnabled() && ! state.getFileName().equals(oldState.getFileName()))
@@ -367,6 +370,13 @@ public class FileWatcher {
 	}
 
 	public void setSincedb(String sincedbFile) {
-		this.sincedbFile = sincedbFile;	
-        }
+		this.sincedbFile = sincedbFile;
+		try {
+			logger.debug("Loading saved states");
+			savedStates = Registrar.readStateFromJson(sincedbFile);
+		} catch(Exception e) {
+			logger.warn("Could not load saved states : " + e.getMessage(), e);
+		}
+	}
+
 }

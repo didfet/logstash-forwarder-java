@@ -56,7 +56,7 @@ public class FileReaderTest {
 		List<FileState> fileList = new ArrayList<FileState>(1);
 		File file1 = new File("testFileReader1.txt");
 		FileUtils.write(file1, "testFileReader1 line1\n");
-                FileUtils.write(file1, " nl line12\n", true);
+        FileUtils.write(file1, " nl line12\n", true);
 		FileUtils.write(file1, "testFileReader1 line2\n", true);
 		FileUtils.write(file1, "testFileReader1 line3\n", true);
 		Thread.sleep(500);
