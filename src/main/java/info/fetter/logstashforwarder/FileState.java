@@ -29,6 +29,7 @@ import java.io.IOException;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.Map;
 
 public class FileState {
 	@JsonIgnore
@@ -52,6 +53,8 @@ public class FileState {
 	private FileState oldFileState;
 	@JsonIgnore
 	private Event fields;
+	@JsonIgnore
+	private Multiline multiline;
 	@JsonIgnore
 	private boolean matchedToNewFile = false;
 
@@ -164,7 +167,7 @@ public class FileState {
 		this.oldFileState = oldFileState;
 		oldFileState.setMatchedToNewFile(true);
 	}
-	
+
 	public void deleteOldFileState() {
 		try {
 			oldFileState.getRandomAccessFile().close();
@@ -179,7 +182,15 @@ public class FileState {
 	public void setFields(Event fields) {
 		this.fields = fields;
 	}
-	
+
+	public Multiline getMultiline() {
+		return multiline;
+	}
+
+	public void setMultiline(Multiline multiline) {
+		this.multiline = multiline;
+	}
+
 	public boolean isMatchedToNewFile() {
 		return matchedToNewFile;
 	}
