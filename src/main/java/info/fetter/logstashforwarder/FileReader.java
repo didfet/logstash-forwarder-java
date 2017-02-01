@@ -23,6 +23,7 @@ import info.fetter.logstashforwarder.util.RandomAccessFile;
 import java.io.File;
 import java.io.IOException;
 //import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -123,6 +124,15 @@ public class FileReader extends Reader {
 		return false;
 	}
 
+	private static byte[] extractBytes(ByteBuffer byteBuffer)
+	{
+		byte[] bytes = new byte[byteBuffer.position()];
+		byteBuffer.rewind();
+		byteBuffer.get(bytes);
+		byteBuffer.clear();
+		return bytes;
+	}
+
 	private long readLines(FileState state, int spaceLeftInSpool) {
 		RandomAccessFile reader = state.getRandomAccessFile();
 		long pos = state.getPointer();
@@ -130,7 +140,8 @@ public class FileReader extends Reader {
 		try {
 			reader.seek(pos);
 			byte[] line = readLine(reader);
-			byte[] bufferedLines = null;
+			ByteBuffer bufferedLines = ByteBuffer.allocate(BYTEBUFFER_CAPACITY);
+			bufferedLines.clear();
 			while (line != null && spaceLeftInSpool > 0) {
 				if(logger.isTraceEnabled()) {
 					logger.trace("-- Read line : " + new String(line));
@@ -148,28 +159,25 @@ public class FileReader extends Reader {
 					if (multiline.isPatternFound(line))
 						{
 							// buffer the line
-							if (bufferedLines != null)
-								{
-									bufferedLines = ArrayUtils.addAll(bufferedLines, line);
-								}
-							else
-								{
-									bufferedLines = line;
-								}
+							if (bufferedLines.position() > 0) {
+								bufferedLines.put(Multiline.JOINT);
+							}
+							bufferedLines.put(line);
 						}
 					else {
 						if (multiline.isPrevious()) {
 							// did not match, so new event started
-							if (bufferedLines != null) {
-								addEvent(state, pos, bufferedLines);
+							if (bufferedLines.position() > 0) {
+								addEvent(state, pos, extractBytes(bufferedLines));
 							}
-							bufferedLines = line;
+							bufferedLines.put(line);
 						}
 						else {
 							// did not match, add the current line
-							if (bufferedLines != null) {
-								addEvent(state, pos, ArrayUtils.addAll(bufferedLines, line));
-								bufferedLines = null;
+							if (bufferedLines.position() > 0) {
+								bufferedLines.put(Multiline.JOINT);
+								bufferedLines.put(line);
+								addEvent(state, pos, extractBytes(bufferedLines));
 							}
 							else
 								addEvent(state, pos, line);
@@ -179,8 +187,8 @@ public class FileReader extends Reader {
 				line = readLine(reader);
 				spaceLeftInSpool--;
 			}
-			if (bufferedLines != null) {
-				addEvent(state, pos, bufferedLines); // send any buffered lines left
+			if (bufferedLines.position() > 0) {
+				addEvent(state, pos, extractBytes(bufferedLines)); // send any buffered lines left
 			}
 			reader.seek(pos); // Ensure we can re-read if necessary
 		} catch(IOException e) {
@@ -196,10 +204,7 @@ public class FileReader extends Reader {
 		while((ch=reader.read()) != -1) {
 			switch(ch) {
 			case '\n':
-				byte[] line = new byte[byteBuffer.position()];
-				byteBuffer.rewind();
-				byteBuffer.get(line);
-				return line;
+				return extractBytes(byteBuffer);
 			case '\r':
 				seenCR = true;
 				break;

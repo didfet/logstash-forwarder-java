@@ -40,20 +40,20 @@ public abstract class Reader {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	protected Reader(int spoolSize) {
 		this.spoolSize = spoolSize;
 		eventList = new ArrayList<Event>(spoolSize);
 	}
-	
+
 	protected void addEvent(FileState state, long pos, String line) throws IOException {
 		addEvent(state.getFile().getCanonicalPath(), state.getFields(), pos, line);
 	}
-	
+
 	protected void addEvent(FileState state, long pos, byte[] line) throws IOException {
 		addEvent(state.getFile().getCanonicalPath(), state.getFields(), pos, line);
 	}
-	
+
 	protected void addEvent(String fileName, Event fields, long pos, byte[] line) throws IOException {
 		Event event = new Event(fields);
 		event.addField("file", fileName)
@@ -71,7 +71,7 @@ public abstract class Reader {
 		.addField("host", hostname);
 		eventList.add(event);
 	}
-	
+
 	public ProtocolAdapter getAdapter() {
 		return adapter;
 	}
