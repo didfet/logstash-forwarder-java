@@ -25,17 +25,32 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ProtocolException;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.Deflater;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
+
 import org.apache.commons.io.HexDump;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 public class LumberjackClient implements ProtocolAdapter {
@@ -47,8 +62,8 @@ public class LumberjackClient implements ProtocolAdapter {
 	private final static byte FRAME_COMPRESSED = 0x43;
 
 	private Socket socket;
-
-
+	private SSLSocket sslSocket;
+	private KeyStore keyStore;
 	private String server;
 	private int port;
 	private DataOutputStream output;
@@ -60,19 +75,21 @@ public class LumberjackClient implements ProtocolAdapter {
 		this.port = port;
 
 		try {
-			
+			//if keystorepath is null, behaviour is modified, in order to run in mode no_ssl
 			if(server == null) {
 				throw new IOException("Server address not configured");
+			}	
+			generatePlainSocket(server, port, timeout);
+			if (keyStorePath!=null){
+				generateSSLSocket(keyStorePath, server, port);
+				output = new DataOutputStream(new BufferedOutputStream(sslSocket.getOutputStream()));
+				input = new DataInputStream(sslSocket.getInputStream());
+
 			}
-			
-		
-		
-			socket = new Socket();
-			socket.connect(new InetSocketAddress(InetAddress.getByName(server), port), timeout);
-			socket.setSoTimeout(timeout);
-			
-			output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
-			input = new DataInputStream(socket.getInputStream());
+			else{
+				output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+				input = new DataInputStream(socket.getInputStream());	
+			}			
 
 			logger.info("Connected to " + server + ":" + port);
 			
@@ -81,6 +98,31 @@ public class LumberjackClient implements ProtocolAdapter {
 		} catch(Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private void generateSSLSocket(String keyStorePath, String server, int port)
+			throws KeyStoreException, IOException, NoSuchAlgorithmException,
+			CertificateException, FileNotFoundException, KeyManagementException {
+		keyStore = KeyStore.getInstance("JKS");
+		keyStore.load(new FileInputStream(keyStorePath), null);
+
+		TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
+		tmf.init(keyStore);
+
+		SSLContext context = SSLContext.getInstance("TLS");
+		context.init(null, tmf.getTrustManagers(), null);
+
+		SSLSocketFactory socketFactory = context.getSocketFactory();
+		sslSocket = (SSLSocket)socketFactory.createSocket(socket, server, port, true);
+		sslSocket.setUseClientMode(true);
+		sslSocket.startHandshake();
+	}
+
+	private void generatePlainSocket(String server, int port, int timeout)
+			throws IOException, UnknownHostException, SocketException {
+		socket = new Socket();
+		socket.connect(new InetSocketAddress(InetAddress.getByName(server), port), timeout);
+		socket.setSoTimeout(timeout);
 	}
 
 	public int sendWindowSizeFrame(int size) throws IOException {
@@ -204,11 +246,8 @@ public class LumberjackClient implements ProtocolAdapter {
 	}
 
 	public void close() throws AdapterException {
-		try {
-			socket.close();
-		} catch(Exception e) {
-			throw new AdapterException(e);
-		}
+		IOUtils.closeQuietly(socket);
+		IOUtils.closeQuietly(sslSocket);
 		logger.info("Connection to " + server + ":" + port + " closed");
 	}
 
