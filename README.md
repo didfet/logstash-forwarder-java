@@ -44,6 +44,8 @@ The configuration file is the same (json format), but there are a few difference
   - the ssl ca parameter points to a java [keystore](https://github.com/didfet/logstash-forwarder-java/blob/master/HOWTO-KEYSTORE.md) containing the root certificate of the server, not a PEM file
   - comments are C-style comments
 
+It's also possible to work in ssl disabled mode
+
 ### Command-line options
 
 Some options are the same :
