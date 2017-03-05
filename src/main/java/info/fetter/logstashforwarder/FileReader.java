@@ -150,25 +150,26 @@ public class FileReader extends Reader {
 				pos = reader.getFilePointer();
 				if (multiline == null) {
 					addEvent(state, pos, line);
+					spaceLeftInSpool--;
 				}
 				else {
 					if (logger.isTraceEnabled()) {
 						logger.trace("-- Multiline : " + multiline);
 						logger.trace("-- Multiline : matches " + multiline.isPatternFound(line));
 					}
-					if (multiline.isPatternFound(line))
-						{
-							// buffer the line
-							if (bufferedLines.position() > 0) {
-								bufferedLines.put(Multiline.JOINT);
-							}
-							bufferedLines.put(line);
+					if (multiline.isPatternFound(line)) {
+						// buffer the line
+						if (bufferedLines.position() > 0) {
+							bufferedLines.put(Multiline.JOINT);
 						}
+						bufferedLines.put(line);
+					}
 					else {
 						if (multiline.isPrevious()) {
 							// did not match, so new event started
 							if (bufferedLines.position() > 0) {
 								addEvent(state, pos, extractBytes(bufferedLines));
+								spaceLeftInSpool--;
 							}
 							bufferedLines.put(line);
 						}
@@ -178,14 +179,16 @@ public class FileReader extends Reader {
 								bufferedLines.put(Multiline.JOINT);
 								bufferedLines.put(line);
 								addEvent(state, pos, extractBytes(bufferedLines));
+								spaceLeftInSpool--;
 							}
-							else
+							else {
 								addEvent(state, pos, line);
+								spaceLeftInSpool--;
+							}
 						}
 					}
 				}
 				line = readLine(reader);
-				spaceLeftInSpool--;
 			}
 			if (bufferedLines.position() > 0) {
 				addEvent(state, pos, extractBytes(bufferedLines)); // send any buffered lines left
