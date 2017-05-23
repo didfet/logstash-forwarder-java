@@ -67,6 +67,7 @@ public class Forwarder {
 	private static String logfileSize = "10MB";
 	private static int logfileNumber = 5;
 	private static String sincedbFile = SINCEDB;
+	private static boolean legacySslDisabled = false;
 
 	public static void main(String[] args) {
 		try {
@@ -154,6 +155,7 @@ public class Forwarder {
 		Option debugWatcherOption = new Option("debugwatcher", "operate watcher in debug mode");
 		Option traceOption = new Option("trace", "operate in trace mode");
 		Option tailOption = new Option("tail", "read new files from the end");
+		Option disableLegacySSL = new Option("disableLegacySSL", "disable using SSLv2Hello and SSLv3 protocols");
 
 		Option spoolSizeOption = OptionBuilder.withArgName("number of events")
 				.hasArg()
@@ -202,7 +204,8 @@ public class Forwarder {
 		.addOption(logfileOption)
 		.addOption(logfileNumberOption)
 		.addOption(logfileSizeOption)
-		.addOption(sincedbOption);
+		.addOption(sincedbOption)
+		.addOption(disableLegacySSL);
 		
 		CommandLineParser parser = new GnuParser();
 		try {
@@ -246,13 +249,16 @@ public class Forwarder {
 			if(line.hasOption("sincedb")) {
 				sincedbFile = line.getOptionValue("sincedb");
 			}
+			if(line.hasOption("disableLegacySSL")) {
+				legacySslDisabled = true;
+			}
 		} catch(ParseException e) {
 			printHelp(options);
-			System.exit(1);;
+			System.exit(1);
 		} catch(NumberFormatException e) {
 			System.err.println("Value must be an integer");
 			printHelp(options);
-			System.exit(2);;
+			System.exit(2);
 		}
 	}
 
@@ -284,4 +290,7 @@ public class Forwarder {
 		//			Logger.getLogger(FileReader.class).setAdditivity(false);
 	}
 
+	public static boolean isLegacySslDisabled() {
+		return legacySslDisabled;
+	}
 }
