@@ -18,6 +18,7 @@ package info.fetter.logstashforwarder.protocol;
  */
 
 import info.fetter.logstashforwarder.Event;
+import info.fetter.logstashforwarder.Forwarder;
 import info.fetter.logstashforwarder.ProtocolAdapter;
 import info.fetter.logstashforwarder.util.AdapterException;
 
@@ -32,9 +33,7 @@ import java.net.InetSocketAddress;
 import java.net.ProtocolException;
 import java.net.Socket;
 import java.security.KeyStore;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.zip.Deflater;
 
 import javax.net.ssl.SSLContext;
@@ -88,6 +87,15 @@ public class LumberjackClient implements ProtocolAdapter {
 			socket.connect(new InetSocketAddress(InetAddress.getByName(server), port), timeout);
 			socket.setSoTimeout(timeout);
 			sslSocket = (SSLSocket)socketFactory.createSocket(socket, server, port, true);
+			if(Forwarder.isLegacySslDisabled()) {
+                String[] protocols = sslSocket.getEnabledProtocols();
+                Set<String> set = new HashSet<String>();
+                for (String s : protocols) {
+                    if (s.equals("SSLv3") || s.equals("SSLv2Hello")) continue;
+                    set.add(s);
+                }
+                sslSocket.setEnabledProtocols(set.toArray(new String[0]));
+            }
 			sslSocket.setUseClientMode(true);
 			sslSocket.startHandshake();
 

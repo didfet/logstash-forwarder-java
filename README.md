@@ -61,4 +61,5 @@ There are a few more options :
   - logfile : send logs to this file instead of stdout
   - logfilesize : maximum size of each log file (default 10M)
   - logfilenumber : number of rotated log files (default 5)
+  - disableLegacySSL : disable using SSLv2Hello and SSLv3 protocols
 
