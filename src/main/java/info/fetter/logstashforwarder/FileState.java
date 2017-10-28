@@ -56,6 +56,8 @@ public class FileState {
 	@JsonIgnore
 	private Multiline multiline;
 	@JsonIgnore
+	private Filter filter;
+	@JsonIgnore
 	private boolean matchedToNewFile = false;
 
 	public FileState() {
@@ -189,6 +191,14 @@ public class FileState {
 
 	public void setMultiline(Multiline multiline) {
 		this.multiline = multiline;
+	}
+
+	public Filter getFilter() {
+		return filter;
+	}
+
+	public void setFilter(Filter filter) {
+		this.filter = filter;
 	}
 
 	public boolean isMatchedToNewFile() {

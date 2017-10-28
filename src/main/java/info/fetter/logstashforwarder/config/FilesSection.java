@@ -25,6 +25,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import info.fetter.logstashforwarder.Multiline;
+import info.fetter.logstashforwarder.Filter;
 import java.io.UnsupportedEncodingException;
 
 public class FilesSection {
@@ -33,6 +34,7 @@ public class FilesSection {
 	@JsonProperty("dead time")
 	private String deadTime = "24h";
 	private Multiline multiline;
+	private Filter filter;
 
 	public List<String> getPaths() {
 		return paths;
@@ -91,6 +93,14 @@ public class FilesSection {
 		this.multiline = new Multiline(multilineMap);
 	}
 
+	public Filter getFilter() {
+		return filter;
+	}
+
+	public void setFilter(Map<String, String> filterMap) throws UnsupportedEncodingException {
+		this.filter = new Filter(filterMap);
+	}
+
 	@Override
 	public String toString() {
 		return new ToStringBuilder(this).
@@ -98,6 +108,7 @@ public class FilesSection {
 				append("fields", fields).
 				append("dead time", deadTime).
 				append("multiline", multiline).
+				append("filter", filter).
 				toString();
 	}
 }

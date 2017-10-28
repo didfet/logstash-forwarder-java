@@ -47,11 +47,19 @@ public abstract class Reader {
 	}
 
 	protected void addEvent(FileState state, long pos, String line) throws IOException {
-		addEvent(state.getFile().getCanonicalPath(), state.getFields(), pos, line);
+		Filter filter = state.getFilter();
+		if (filter == null || filter.accept(line)) {
+			addEvent(state.getFile().getCanonicalPath(),
+					 state.getFields(), pos, line);
+		}
 	}
 
 	protected void addEvent(FileState state, long pos, byte[] line) throws IOException {
-		addEvent(state.getFile().getCanonicalPath(), state.getFields(), pos, line);
+		Filter filter = state.getFilter();
+		if (filter == null || filter.accept(line)) {
+			addEvent(state.getFile().getCanonicalPath(),
+					 state.getFields(), pos, line);
+		}
 	}
 
 	protected void addEvent(String fileName, Event fields, long pos, byte[] line) throws IOException {

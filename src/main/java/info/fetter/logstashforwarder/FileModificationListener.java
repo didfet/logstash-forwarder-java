@@ -26,11 +26,13 @@ public class FileModificationListener implements FileAlterationListener {
 	private Event fields;
 	private FileWatcher watcher;
 	private Multiline multiline;
+	private Filter filter;
 
-	public FileModificationListener(FileWatcher watcher, Event fields, Multiline multiline) {
+	public FileModificationListener(FileWatcher watcher, Event fields, Multiline multiline, Filter filter) {
 		this.watcher = watcher;
 		this.fields = fields;
 		this.multiline = multiline;
+		this.filter = filter;
 	}
 
 	public void onDirectoryChange(File file) {
@@ -46,11 +48,11 @@ public class FileModificationListener implements FileAlterationListener {
 	}
 
 	public void onFileChange(File file) {
-		watcher.onFileChange(file, fields, multiline);
+		watcher.onFileChange(file, fields, multiline, filter);
 	}
 
 	public void onFileCreate(File file) {
-		watcher.onFileCreate(file, fields, multiline);
+		watcher.onFileCreate(file, fields, multiline, filter);
 	}
 
 	public void onFileDelete(File file) {

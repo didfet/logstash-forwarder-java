@@ -49,7 +49,7 @@ public class FileWatcherTest {
 	//@Test
 	public void testFileWatch() throws InterruptedException, IOException {
 		FileWatcher watcher = new FileWatcher();
-		watcher.addFilesToWatch("./test.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY, null);
+		watcher.addFilesToWatch("./test.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY, null, null);
 		for(int i = 0; i < 100; i++) {
 			Thread.sleep(1000);
 			watcher.checkFiles();
@@ -60,7 +60,7 @@ public class FileWatcherTest {
 	public void testFileWatchWithMultilines() throws InterruptedException, IOException {
 		FileWatcher watcher = new FileWatcher();
 		Multiline multiline = new Multiline();
-		watcher.addFilesToWatch("./test.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY, multiline);
+		watcher.addFilesToWatch("./test.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY, multiline, null);
 		for(int i = 0; i < 100; i++) {
 			Thread.sleep(1000);
 			watcher.checkFiles();
@@ -74,7 +74,7 @@ public class FileWatcherTest {
 			return;
 		}
 		FileWatcher watcher = new FileWatcher();
-		watcher.addFilesToWatch("./testFileWatcher*.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY, null);
+		watcher.addFilesToWatch("./testFileWatcher*.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY, null, null);
 		watcher.initialize();
 
 		File file1 = new File("testFileWatcher1.txt");
@@ -123,7 +123,7 @@ public class FileWatcherTest {
                 m.put("pattern", " nl");
                 m.put("negate", "false");
                 Multiline multiline = new Multiline(m);
-		watcher.addFilesToWatch("./testFileWatcher*.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY, multiline);
+		watcher.addFilesToWatch("./testFileWatcher*.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY, multiline, null);
 		watcher.initialize();
 
 		File file1 = new File("testFileWatcher1.txt");
