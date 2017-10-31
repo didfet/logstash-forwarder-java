@@ -2,6 +2,7 @@ package info.fetter.logstashforwarder;
 
 /*
  * Copyright 2015 Didier Fetter
+ * Copyright 2017 Alberto González Palomo https://sentido-labs.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,7 +80,7 @@ public class FileReader extends Reader {
 				if(logger.isTraceEnabled()) {
 					logger.trace("File : " + file + " has been deleted");
 				}
-			} else if(state.getRandomAccessFile().length() == 0) {
+			} else if(state.getRandomAccessFile().isEmpty()) {
 				if(logger.isTraceEnabled()) {
 					logger.trace("File : " + file + " is empty");
 				}
@@ -105,6 +106,7 @@ public class FileReader extends Reader {
 
 	private boolean isCompressedFile(FileState state) {
 		RandomAccessFile reader = state.getRandomAccessFile();
+		if (!reader.canSeek()) return false;
 		try {
 			for(byte[] magic : MAGICS) {
 				byte[] fileBytes = new byte[magic.length];

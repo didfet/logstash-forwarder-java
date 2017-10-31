@@ -2,6 +2,7 @@ package info.fetter.logstashforwarder;
 
 /*
  * Copyright 2015 Didier Fetter
+ * Copyright 2017 Alberto González Palomo https://sentido-labs.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +60,7 @@ public class FileWatcher {
 				oldWatchMap.put(state.getFile(), state);
 			}
 		}
-		processModifications();
+		synchronized (newWatchMap) { processModifications(); }
 		if(tail) {
 			for(FileState state : oldWatchMap.values()) {
 				if(state.getPointer() == 0) {
@@ -90,7 +91,7 @@ public class FileWatcher {
 		for(FileAlterationObserver observer : observerList) {
 			observer.checkAndNotify();
 		}
-		processModifications();
+		synchronized (newWatchMap) { processModifications(); }
 		printWatchMap();
 	}
 
@@ -223,12 +224,33 @@ public class FileWatcher {
 		removeMarkedFilesFromWatchMap();
 	}
 
+	// This filter will accept anything that is not a directory,
+	// including named pipes (FIFOs), sockets and device files.
+	// The standard org.apache.commons.io.filefilter.FileFileFilter excludes
+	// them even if their documentation says
+	// "This filter accepts Files that are files (not directories)."
+	protected class FileFileFilter implements IOFileFilter
+	{
+		@Override
+		public boolean accept(File file) {
+			return !file.isDirectory();
+		}
+
+		@Override
+		public boolean accept(File dir, String name) {
+			return accept(new File(dir, name));
+		}
+	}
+	protected IOFileFilter fileFileFilter() {
+		return new FileFileFilter();
+	}
+
 	private void addSingleFile(String fileToWatch, Event fields, long deadTime, Multiline multiline, Filter filter) throws Exception {
 		logger.info("Watching file : " + new File(fileToWatch).getCanonicalPath());
 		String directory = FilenameUtils.getFullPath(fileToWatch);
 		String fileName = FilenameUtils.getName(fileToWatch);
 		IOFileFilter fileFilter = FileFilterUtils.and(
-				FileFilterUtils.fileFileFilter(),
+				fileFileFilter(),
 				FileFilterUtils.nameFileFilter(fileName),
 				new LastModifiedFileFilter(deadTime));
 		initializeWatchMap(new File(directory), fileFilter, fields, multiline, filter);
@@ -240,7 +262,7 @@ public class FileWatcher {
 		String wildcard = FilenameUtils.getName(filesToWatch);
 		logger.trace("Directory : " + new File(directory).getCanonicalPath() + ", wildcard : " + wildcard);
 		IOFileFilter fileFilter = FileFilterUtils.and(
-				FileFilterUtils.fileFileFilter(),
+				fileFileFilter(),
 				new WildcardFileFilter(wildcard),
 				new LastModifiedFileFilter(deadTime));
 		initializeWatchMap(new File(directory), fileFilter, fields, multiline, filter);
@@ -267,22 +289,50 @@ public class FileWatcher {
 		}
 	}
 
-	private void addFileToWatchMap(Map<File,FileState> map, File file, Event fields, Multiline multiline, Filter filter) {
-		try {
-			FileState state = new FileState(file);
-			state.setFields(fields);
-			int signatureLength = (int) (state.getSize() > maxSignatureLength ? maxSignatureLength : state.getSize());
-			state.setSignatureLength(signatureLength);
-			long signature = FileSigner.computeSignature(state.getRandomAccessFile(), signatureLength);
-			state.setSignature(signature);
-			logger.trace("Setting signature of size : " + signatureLength + " on file : " + file + " : " + signature);
-			state.setMultiline(multiline);
-			state.setFilter(filter);
-			map.put(file, state);
-		} catch(IOException e) {
-			logger.error("Caught IOException in addFileToWatchMap : " +
-						 e.getMessage());
+	// This class will wait until the file is open, which happens in
+	// new FileState(file).
+	// Normal files open immediately, but named pipes block until data
+	// is written in them.
+	protected class FileAdderThread extends Thread
+	{
+		Map<File,FileState> map;
+		File file;
+		Event fields;
+		Multiline multiline;
+		Filter filter;
+
+		private FileAdderThread() {}
+		public FileAdderThread(Map<File,FileState> map, File file, Event fields, Multiline multiline, Filter filter) {
+			this.map = map;
+			this.file = file;
+			this.fields = fields;
+			this.multiline = multiline;
+			this.filter = filter;
 		}
+
+		public void run() {
+			try {
+				FileState state = new FileState(file);
+				state.setFields(fields);
+				int signatureLength = (int) (state.getSize() > maxSignatureLength ? maxSignatureLength : state.getSize());
+				state.setSignatureLength(signatureLength);
+				long signature = FileSigner.computeSignature(state.getRandomAccessFile(), signatureLength);
+				state.setSignature(signature);
+				logger.trace("Setting signature of size : " + signatureLength + " on file : " + file + " : " + signature);
+				state.setMultiline(multiline);
+				state.setFilter(filter);
+				synchronized (map /* This is actually newWatchMap. */) {
+					map.put(file, state);
+				}
+			} catch(IOException e) {
+				logger.error("Caught IOException in addFileToWatchMap : " +
+							 e.getMessage());
+			}
+		}
+	}
+
+	private void addFileToWatchMap(Map<File,FileState> map, File file, Event fields, Multiline multiline, Filter filter) {
+		(new FileAdderThread(map, file, fields, multiline, filter)).start();
 	}
 
 	public void onFileChange(File file, Event fields, Multiline multiline, Filter filter) {
