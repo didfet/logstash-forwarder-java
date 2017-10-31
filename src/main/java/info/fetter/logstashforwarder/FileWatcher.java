@@ -280,7 +280,8 @@ public class FileWatcher {
 			state.setFilter(filter);
 			map.put(file, state);
 		} catch(IOException e) {
-			logger.error("Caught IOException : " + e.getMessage());
+			logger.error("Caught IOException in addFileToWatchMap : " +
+						 e.getMessage());
 		}
 	}
 
@@ -289,7 +290,8 @@ public class FileWatcher {
 			logger.debug("Change detected on file : " + file.getCanonicalPath());
 			addFileToWatchMap(newWatchMap, file, fields, multiline, filter);
 		} catch (IOException e) {
-			logger.error("Caught IOException : " + e.getMessage());
+			logger.error("Caught IOException in onFileChange : " +
+						 e.getMessage());
 		}
 	}
 
@@ -298,7 +300,8 @@ public class FileWatcher {
 			logger.debug("Create detected on file : " + file.getCanonicalPath());
 			addFileToWatchMap(newWatchMap, file, fields, multiline, filter);
 		} catch (IOException e) {
-			logger.error("Caught IOException : " + e.getMessage());
+			logger.error("Caught IOException in onFileCreate : " +
+						 e.getMessage());
 		}
 	}
 
@@ -308,7 +311,8 @@ public class FileWatcher {
 			FileState state = oldWatchMap.get(file);
 			if (state != null) state.setDeleted();
 		} catch (IOException e) {
-			logger.error("Caught IOException : " + e.getMessage());
+			logger.error("Caught IOException in onFileDelete: " +
+						 e.getMessage());
 		}
 	}
 
