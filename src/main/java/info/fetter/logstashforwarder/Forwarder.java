@@ -80,7 +80,7 @@ public class Forwarder {
 			configManager.readConfiguration();
 			for(FilesSection files : configManager.getConfig().getFiles()) {
 				for(String path : files.getPaths()) {
-					watcher.addFilesToWatch(path, new Event(files.getFields()), files.getDeadTimeInSeconds() * 1000);
+					watcher.addFilesToWatch(path, new Event(files.getFields()), files.getDeadTimeInSeconds() * 1000, files.getMultiline(), files.getFilter());
 				}
 			}
 			watcher.initialize();
@@ -203,7 +203,7 @@ public class Forwarder {
 		.addOption(logfileNumberOption)
 		.addOption(logfileSizeOption)
 		.addOption(sincedbOption);
-		
+
 		CommandLineParser parser = new GnuParser();
 		try {
 			CommandLine line = parser.parse(options, args);

@@ -1,5 +1,6 @@
 /*
  * Copyright 1998-2009 University Corporation for Atmospheric Research/Unidata
+ * Copyright 2017 Alberto González Palomo https://sentido-labs.com
  *
  * Portions of this software were developed by the Unidata Program at the
  * University Corporation for Atmospheric Research.
@@ -160,13 +161,14 @@ public class RandomAccessFile implements DataInput, DataOutput {
    */
   protected java.io.RandomAccessFile file;
   protected java.nio.channels.FileChannel fileChannel;
+  protected boolean canSeek;
 
   /**
    * The offset in bytes from the file start, of the next read or
    * write operation.
    */
   protected long filePosition;
-                      
+
   /**
    * The buffer used for reading the data.
    */
@@ -261,6 +263,12 @@ public class RandomAccessFile implements DataInput, DataOutput {
     }
 
     this.file = new java.io.RandomAccessFile(location, mode);
+    try {
+        this.file.seek(0);
+        canSeek = true;
+    } catch (IOException e) {
+        canSeek = false;
+    }
     this.readonly = mode.equals("r");
     init(bufferSize);
 
@@ -374,6 +382,10 @@ public class RandomAccessFile implements DataInput, DataOutput {
     readBuffer(pos);
   }
 
+  public boolean canSeek() {
+    return canSeek;
+  }
+
   protected void readBuffer(long pos) throws IOException {
     // If the current buffer is modified, write it to disk.
     if (bufferModified) {
@@ -424,11 +436,24 @@ public class RandomAccessFile implements DataInput, DataOutput {
    * @throws IOException if an I/O error occurrs.
    */
   public long length() throws IOException {
-    long fileLength = file.length();
+    long fileLength = canSeek? file.length(): 0;
     if (fileLength < dataEnd) {
       return dataEnd;
     } else {
       return fileLength;
+    }
+  }
+
+  /**
+   * Check whether the file is empty: normal files are empty
+   * when their size is zero, but other kinds of files like
+   * named pipes / FIFOs do not report a size.
+   */
+  public boolean isEmpty() throws IOException {
+    if (canSeek) {
+      return length() == 0;
+    } else {
+      return false;
     }
   }
 
@@ -461,7 +486,7 @@ public class RandomAccessFile implements DataInput, DataOutput {
    */
   public void flush() throws IOException {
     if (bufferModified) {
-      file.seek(bufferStart);
+      if (canSeek) file.seek(bufferStart);
       file.write(buffer, 0, dataSize);
       //System.out.println("--flush at "+bufferStart+" dataSize= "+dataSize+ " filePosition= "+filePosition);
       bufferModified = false;
@@ -628,7 +653,7 @@ public class RandomAccessFile implements DataInput, DataOutput {
    * @throws IOException on io error
    */
   protected int read_(long pos, byte[] b, int offset, int len) throws IOException {
-    file.seek(pos);
+    if (canSeek) file.seek(pos);
     int n = file.read(b, offset, len);
     if (debugAccess) {
       if (showRead) System.out.println(" **read_ " + location + " = " + len + " bytes at " + pos + "; block = " + (pos / buffer.length));
@@ -852,7 +877,7 @@ public class RandomAccessFile implements DataInput, DataOutput {
       if (bufferModified) {
         flush();
       }
-      file.seek(filePosition);  // moved per Steve Cerruti; Jan 14, 2005
+      if (canSeek) file.seek(filePosition);  // moved per Steve Cerruti; Jan 14, 2005
       file.write(b, off, len);
       //System.out.println("--write at "+filePosition+" "+len);
 
@@ -1734,5 +1759,3 @@ public class RandomAccessFile implements DataInput, DataOutput {
   }
 
 }
-
-

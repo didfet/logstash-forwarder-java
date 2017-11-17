@@ -19,16 +19,22 @@ package info.fetter.logstashforwarder.config;
 
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import info.fetter.logstashforwarder.Multiline;
+import info.fetter.logstashforwarder.Filter;
+import java.io.UnsupportedEncodingException;
 
 public class FilesSection {
 	private List<String> paths;
 	private Map<String,String> fields;
 	@JsonProperty("dead time")
 	private String deadTime = "24h";
+	private Multiline multiline;
+	private Filter filter;
 
 	public List<String> getPaths() {
 		return paths;
@@ -50,8 +56,8 @@ public class FilesSection {
 		return deadTime;
 	}
 
-	public int getDeadTimeInSeconds() {
-		int deadTimeInSeconds = 0;
+	public long getDeadTimeInSeconds() {
+		long deadTimeInSeconds = 0;
 		String remaining = deadTime;
 
 		if(deadTime.contains("h")) {
@@ -79,12 +85,30 @@ public class FilesSection {
 		this.deadTime = deadTime;
 	}
 
+	public Multiline getMultiline() {
+		return multiline;
+	}
+
+	public void setMultiline(Map<String, String> multilineMap) throws UnsupportedEncodingException {
+		this.multiline = new Multiline(multilineMap);
+	}
+
+	public Filter getFilter() {
+		return filter;
+	}
+
+	public void setFilter(Map<String, String> filterMap) throws UnsupportedEncodingException {
+		this.filter = new Filter(filterMap);
+	}
+
 	@Override
 	public String toString() {
 		return new ToStringBuilder(this).
 				append("paths", paths).
 				append("fields", fields).
 				append("dead time", deadTime).
+				append("multiline", multiline).
+				append("filter", filter).
 				toString();
 	}
 }

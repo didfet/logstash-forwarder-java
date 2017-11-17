@@ -23,7 +23,9 @@ import info.fetter.logstashforwarder.util.AdapterException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.BasicConfigurator;
@@ -54,12 +56,41 @@ public class FileReaderTest {
 		List<FileState> fileList = new ArrayList<FileState>(1);
 		File file1 = new File("testFileReader1.txt");
 		FileUtils.write(file1, "testFileReader1 line1\n");
+		FileUtils.write(file1, " nl line12\n", true);
 		FileUtils.write(file1, "testFileReader1 line2\n", true);
 		FileUtils.write(file1, "testFileReader1 line3\n", true);
 		Thread.sleep(500);
 		FileState state = new FileState(file1);
 		fileList.add(state);
 		state.setFields(new Event().addField("testFileReader1", "testFileReader1"));
+		Map<String, String> m = new HashMap<String, String>();
+		m.put("pattern", " nl");
+		m.put("negate", "false");
+		state.setMultiline(new Multiline(m));
+		reader.readFiles(fileList);
+		reader.readFiles(fileList);
+		reader.readFiles(fileList);
+		//FileUtils.forceDelete(file1);
+	}
+
+        @Test
+	public void testFileReader2() throws IOException, InterruptedException, AdapterException {
+		FileReader reader = new FileReader(2);
+		reader.setAdapter(new MockProtocolAdapter());
+		List<FileState> fileList = new ArrayList<FileState>(1);
+		File file1 = new File("testFileReader1.txt");
+		FileUtils.write(file1, "testFileReader1 line1\n");
+		FileUtils.write(file1, " nl line12\n", true);
+		FileUtils.write(file1, "testFileReader1 line2\n", true);
+		FileUtils.write(file1, "testFileReader1 line3\n", true);
+		Thread.sleep(500);
+		FileState state = new FileState(file1);
+		fileList.add(state);
+		state.setFields(new Event().addField("testFileReader1", "testFileReader1"));
+		Map<String, String> m = new HashMap<String, String>();
+		m.put("pattern", "testFileReader1");
+		m.put("negate", "true");
+		state.setMultiline(new Multiline(m));
 		reader.readFiles(fileList);
 		reader.readFiles(fileList);
 		reader.readFiles(fileList);

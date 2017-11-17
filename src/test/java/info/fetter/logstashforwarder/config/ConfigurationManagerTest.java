@@ -46,7 +46,7 @@ public class ConfigurationManagerTest {
 	public static void tearDownAfterClass() throws Exception {
 		BasicConfigurator.resetConfiguration();
 	}
-	
+
 	@Test
 	public void testReadConfig1() throws JsonParseException, JsonMappingException, IOException {
 		ConfigurationManager manager = new ConfigurationManager(new File(ConfigurationManagerTest.class.getClassLoader().getResource("config1.json").getFile()));
@@ -57,6 +57,7 @@ public class ConfigurationManagerTest {
 			for(String path : files.getPaths()) {
 				logger.debug(" - Path : " + path);
 			}
+			logger.debug(" - Multiline : " + files.getMultiline());
 			logger.debug(" - Dead time : " + files.getDeadTimeInSeconds());
 			if(files.getDeadTime().equals("24h")) {
 				assertEquals(86400, files.getDeadTimeInSeconds());
