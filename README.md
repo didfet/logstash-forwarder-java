@@ -43,7 +43,8 @@ For help run :
 The configuration file is the same (json format), but there are a few differences :
   - the ssl ca parameter points to a java [keystore](https://github.com/didfet/logstash-forwarder-java/blob/master/HOWTO-KEYSTORE.md) containing the root certificate of the server, not a PEM file
   - comments are C-style comments
-  - multiline support with attributes "pattern", "negate" (true/false) and what (Previous/Next)
+  - multiline support with attributes "pattern", "negate" (true/false) and "what" (previous/next) (version 0.2.5)
+  - filtering support with attributes "pattern" and "negate" (true/false) (version 0.2.5)
 
 ### Command-line options
 
@@ -62,6 +63,4 @@ There are a few more options :
   - logfile : send logs to this file instead of stdout
   - logfilesize : maximum size of each log file (default 10M)
   - logfilenumber : number of rotated log files (default 5)
-  - filter: include/exclude entries, for instance exclude any entries
-    that contain the text "SECRET":
-    `"filter" : { "pattern" : "SECRET", "negate" : "true" }`
+

@@ -29,8 +29,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.commons.lang.ArrayUtils;
-
 import org.apache.log4j.Logger;
 
 
@@ -42,6 +40,7 @@ public class FileReader extends Reader {
 	private static final byte[] GZ_MAGIC = new byte[] {(byte) 0x1f, (byte) 0x8b, (byte) 0x08};
 	private static final byte[][] MAGICS = new byte[][] {ZIP_MAGIC, LZW_MAGIC, LZH_MAGIC, GZ_MAGIC};
 	private Map<File,Long> pointerMap;
+	ByteBuffer bufferedLines = ByteBuffer.allocate(BYTEBUFFER_CAPACITY);
 
 	public FileReader(int spoolSize) {
 		super(spoolSize);
@@ -135,6 +134,14 @@ public class FileReader extends Reader {
 		return bytes;
 	}
 
+	private static void copyLineToBuffer(byte[] line, ByteBuffer byteBuffer) {
+		if(line.length <= byteBuffer.remaining()) {
+			byteBuffer.put(line);
+		} else {
+			byteBuffer.put(line, 0, byteBuffer.remaining());
+		}
+	}
+
 	private long readLines(FileState state, int spaceLeftInSpool) {
 		RandomAccessFile reader = state.getRandomAccessFile();
 		long pos = state.getPointer();
@@ -142,44 +149,48 @@ public class FileReader extends Reader {
 		try {
 			reader.seek(pos);
 			byte[] line = readLine(reader);
-			ByteBuffer bufferedLines = ByteBuffer.allocate(BYTEBUFFER_CAPACITY);
 			bufferedLines.clear();
+			
+			if(multiline != null && multiline.isPrevious()) {
+				spaceLeftInSpool--;
+			}
 			while (line != null && spaceLeftInSpool > 0) {
-				if(logger.isTraceEnabled()) {
-					logger.trace("-- Read line : " + new String(line));
-					logger.trace("-- Space left in spool : " + spaceLeftInSpool);
+				if(logger.isDebugEnabled()) {
+					logger.debug("-- Read line : " + new String(line));
+					logger.debug("-- Space left in spool : " + spaceLeftInSpool);
 				}
 				pos = reader.getFilePointer();
-				if (multiline == null) {
+				if(multiline == null) {
 					addEvent(state, pos, line);
 					spaceLeftInSpool--;
 				}
 				else {
-					if (logger.isTraceEnabled()) {
-						logger.trace("-- Multiline : " + multiline);
-						logger.trace("-- Multiline : matches " + multiline.isPatternFound(line));
+					if(logger.isDebugEnabled()) {
+						logger.debug("-- Multiline : " + multiline + " matches " + multiline.isPatternFound(line));
 					}
-					if (multiline.isPatternFound(line)) {
+					if(multiline.isPatternFound(line)) {
 						// buffer the line
-						if (bufferedLines.position() > 0) {
+						if(bufferedLines.position() > 0 && bufferedLines.hasRemaining()) {
 							bufferedLines.put(Multiline.JOINT);
 						}
-						bufferedLines.put(line);
+						copyLineToBuffer(line, bufferedLines);
 					}
 					else {
-						if (multiline.isPrevious()) {
+						if(multiline.isPrevious()) {
 							// did not match, so new event started
 							if (bufferedLines.position() > 0) {
 								addEvent(state, pos, extractBytes(bufferedLines));
 								spaceLeftInSpool--;
 							}
-							bufferedLines.put(line);
+							copyLineToBuffer(line, bufferedLines);
 						}
 						else {
 							// did not match, add the current line
-							if (bufferedLines.position() > 0) {
-								bufferedLines.put(Multiline.JOINT);
-								bufferedLines.put(line);
+							if(bufferedLines.position() > 0) {
+								if(bufferedLines.hasRemaining()) {
+									bufferedLines.put(Multiline.JOINT);
+								}
+								copyLineToBuffer(line, bufferedLines);
 								addEvent(state, pos, extractBytes(bufferedLines));
 								spaceLeftInSpool--;
 							}
@@ -192,7 +203,7 @@ public class FileReader extends Reader {
 				}
 				line = readLine(reader);
 			}
-			if (bufferedLines.position() > 0) {
+			if(bufferedLines.position() > 0) {
 				addEvent(state, pos, extractBytes(bufferedLines)); // send any buffered lines left
 			}
 			reader.seek(pos); // Ensure we can re-read if necessary
@@ -215,10 +226,14 @@ public class FileReader extends Reader {
 				break;
 			default:
 				if (seenCR) {
-					byteBuffer.put((byte) '\r');
+					if(byteBuffer.hasRemaining()) {
+						byteBuffer.put((byte) '\r');
+					}
 					seenCR = false;
 				}
-				byteBuffer.put((byte)ch);
+				if(byteBuffer.hasRemaining()) {
+					byteBuffer.put((byte)ch);
+				}
 			}
 		}
 		return null;

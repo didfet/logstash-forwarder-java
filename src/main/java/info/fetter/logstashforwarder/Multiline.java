@@ -23,12 +23,12 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 public class Multiline {
-	public enum WhatType { Previous, Next };
-	public static byte JOINT = (byte) ' ';
+	public enum WhatType { previous, next };
+	public static byte JOINT = (byte) '\n';
 
 	private Pattern pattern = null;
 	private boolean negate = false;
-	private WhatType what = WhatType.Previous;
+	private WhatType what = WhatType.previous;
 
 	public Multiline() {
 	}
@@ -54,7 +54,6 @@ public class Multiline {
 				throw new UnsupportedEncodingException(key + " not supported");
 		}
 		pattern = Pattern.compile(strPattern);
-
 	}
 
 	public Pattern getPattern() {
@@ -70,7 +69,7 @@ public class Multiline {
 	}
 
 	public boolean isPrevious() {
-		return what == WhatType.Previous;
+		return what == WhatType.previous;
 	}
 
 	public boolean isPatternFound (byte[] line) {
@@ -81,10 +80,14 @@ public class Multiline {
 
 	@Override
 	public String toString() {
-		return new ToStringBuilder(this).
-			append("pattern", pattern).
-			append("negate", negate).
-			append("what", what).
-			toString();
+		return new StringBuilder()
+			.append("[pattern=")
+			.append(pattern)
+			.append(",negate=")
+			.append(negate)
+			.append(",what=")
+			.append(what)
+			.append("]")
+			.toString();
 	}
 }
