@@ -19,8 +19,6 @@ package info.fetter.logstashforwarder.config;
 
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
-
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.fasterxml.jackson.annotation.JsonProperty;

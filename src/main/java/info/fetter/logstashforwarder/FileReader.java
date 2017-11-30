@@ -105,7 +105,7 @@ public class FileReader extends Reader {
 
 	private boolean isCompressedFile(FileState state) {
 		RandomAccessFile reader = state.getRandomAccessFile();
-		if (!reader.canSeek()) return false;
+		
 		try {
 			for(byte[] magic : MAGICS) {
 				byte[] fileBytes = new byte[magic.length];
