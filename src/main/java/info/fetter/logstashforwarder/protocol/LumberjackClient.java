@@ -26,12 +26,19 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ProtocolException;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.security.KeyManagementException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +50,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
 import org.apache.commons.io.HexDump;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 public class LumberjackClient implements ProtocolAdapter {
@@ -67,39 +75,54 @@ public class LumberjackClient implements ProtocolAdapter {
 		this.port = port;
 
 		try {
-			if(keyStorePath == null) {
-				throw new IOException("Key store not configured");
-			}
+			//if keystorepath is null, behaviour is modified, in order to run in mode no_ssl
 			if(server == null) {
 				throw new IOException("Server address not configured");
+			}	
+			generatePlainSocket(server, port, timeout);
+			if (keyStorePath!=null){
+				generateSSLSocket(keyStorePath, server, port);
+				output = new DataOutputStream(new BufferedOutputStream(sslSocket.getOutputStream()));
+				input = new DataInputStream(sslSocket.getInputStream());
+
 			}
-			
-			keyStore = KeyStore.getInstance("JKS");
-			keyStore.load(new FileInputStream(keyStorePath), null);
-
-			TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
-			tmf.init(keyStore);
-
-			SSLContext context = SSLContext.getInstance("TLS");
-			context.init(null, tmf.getTrustManagers(), null);
-
-			SSLSocketFactory socketFactory = context.getSocketFactory();
-			socket = new Socket();
-			socket.connect(new InetSocketAddress(InetAddress.getByName(server), port), timeout);
-			socket.setSoTimeout(timeout);
-			sslSocket = (SSLSocket)socketFactory.createSocket(socket, server, port, true);
-			sslSocket.setUseClientMode(true);
-			sslSocket.startHandshake();
-
-			output = new DataOutputStream(new BufferedOutputStream(sslSocket.getOutputStream()));
-			input = new DataInputStream(sslSocket.getInputStream());
+			else{
+				output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+				input = new DataInputStream(socket.getInputStream());	
+			}			
 
 			logger.info("Connected to " + server + ":" + port);
+			
 		} catch(IOException e) {
 			throw e;
 		} catch(Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private void generateSSLSocket(String keyStorePath, String server, int port)
+			throws KeyStoreException, IOException, NoSuchAlgorithmException,
+			CertificateException, FileNotFoundException, KeyManagementException {
+		keyStore = KeyStore.getInstance("JKS");
+		keyStore.load(new FileInputStream(keyStorePath), null);
+
+		TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
+		tmf.init(keyStore);
+
+		SSLContext context = SSLContext.getInstance("TLS");
+		context.init(null, tmf.getTrustManagers(), null);
+
+		SSLSocketFactory socketFactory = context.getSocketFactory();
+		sslSocket = (SSLSocket)socketFactory.createSocket(socket, server, port, true);
+		sslSocket.setUseClientMode(true);
+		sslSocket.startHandshake();
+	}
+
+	private void generatePlainSocket(String server, int port, int timeout)
+			throws IOException, UnknownHostException, SocketException {
+		socket = new Socket();
+		socket.connect(new InetSocketAddress(InetAddress.getByName(server), port), timeout);
+		socket.setSoTimeout(timeout);
 	}
 
 	public int sendWindowSizeFrame(int size) throws IOException {
@@ -223,11 +246,8 @@ public class LumberjackClient implements ProtocolAdapter {
 	}
 
 	public void close() throws AdapterException {
-		try {
-			sslSocket.close();
-		} catch(Exception e) {
-			throw new AdapterException(e);
-		}
+		IOUtils.closeQuietly(socket);
+		IOUtils.closeQuietly(sslSocket);
 		logger.info("Connection to " + server + ":" + port + " closed");
 	}
 

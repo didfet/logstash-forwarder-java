@@ -46,6 +46,8 @@ The configuration file is the same (json format), but there are a few difference
   - multiline support with attributes "pattern", "negate" (true/false) and "what" (previous/next) (version 0.2.5)
   - filtering support with attributes "pattern" and "negate" (true/false) (version 0.2.5)
 
+It's also possible to work in ssl disabled mode
+
 ### Command-line options
 
 Some options are the same :
