@@ -1,20 +1,23 @@
 package info.fetter.logstashforwarder;
 
-import info.fetter.logstashforwarder.util.RandomAccessFile;
-
 import java.io.IOException;
-//import java.io.RandomAccessFile;
 import java.util.zip.Adler32;
+
+import info.fetter.logstashforwarder.util.LogFile;
+import info.fetter.logstashforwarder.util.RandomAccessFile;
 
 
 public class FileSigner {
 	private static final Adler32 adler32 = new Adler32();
-	
-	public static long computeSignature(RandomAccessFile file, int signatureLength) throws IOException {
+
+	public static long computeSignature(LogFile logFile, int signatureLength) throws IOException {
+		if (!(logFile instanceof RandomAccessFile)) return 0;
+
+		RandomAccessFile reader = (RandomAccessFile) logFile;
 		adler32.reset();
 		byte[] input = new byte[signatureLength];
-		file.seek(0);
-		file.read(input);
+		reader.seek(0);
+		reader.read(input);
 		adler32.update(input);
 		return adler32.getValue();
 	}

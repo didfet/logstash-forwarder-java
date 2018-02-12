@@ -66,7 +66,7 @@ import java.nio.channels.WritableByteChannel;
  * @see java.io.RandomAccessFile
  */
 
-public class RandomAccessFile implements DataInput, DataOutput {
+public class RandomAccessFile implements DataInput, DataOutput, LogFile {
 
   static public final int BIG_ENDIAN = 0;
   static public final int LITTLE_ENDIAN = 1;
@@ -166,7 +166,7 @@ public class RandomAccessFile implements DataInput, DataOutput {
    * write operation.
    */
   protected long filePosition;
-                      
+
   /**
    * The buffer used for reading the data.
    */
@@ -453,7 +453,7 @@ public class RandomAccessFile implements DataInput, DataOutput {
   public FileDescriptor getFD() throws IOException {
     return (file == null) ? null : file.getFD();
   }
-  
+
   public boolean isEmpty() throws IOException {
 	  return length() == 0;
   }
@@ -1738,5 +1738,3 @@ public class RandomAccessFile implements DataInput, DataOutput {
   }
 
 }
-
-

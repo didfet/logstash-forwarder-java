@@ -19,11 +19,12 @@ package info.fetter.logstashforwarder;
  */
 
 import info.fetter.logstashforwarder.util.AdapterException;
+import info.fetter.logstashforwarder.util.LogFile;
 import info.fetter.logstashforwarder.util.RandomAccessFile;
+import info.fetter.logstashforwarder.util.NamedPipe;
 
 import java.io.File;
 import java.io.IOException;
-//import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
@@ -75,11 +76,11 @@ public class FileReader extends Reader {
 		long pointer = state.getPointer();
 		int numberOfEvents = 0;
 		try {
-			if(state.isDeleted() || state.getRandomAccessFile() == null) { // Don't try to read this file
+			if(state.isDeleted() || state.getLogFile() == null) { // Don't try to read this file
 				if(logger.isTraceEnabled()) {
 					logger.trace("File : " + file + " has been deleted");
 				}
-			} else if(state.getRandomAccessFile().isEmpty()) {
+			} else if(state.getLogFile().isEmpty()) {
 				if(logger.isTraceEnabled()) {
 					logger.trace("File : " + file + " is empty");
 				}
@@ -104,8 +105,10 @@ public class FileReader extends Reader {
 	}
 
 	private boolean isCompressedFile(FileState state) {
-		RandomAccessFile reader = state.getRandomAccessFile();
-		
+		LogFile logFile = state.getLogFile();
+		if (!(logFile instanceof RandomAccessFile)) return false;
+		RandomAccessFile reader = (RandomAccessFile) logFile;
+
 		try {
 			for(byte[] magic : MAGICS) {
 				byte[] fileBytes = new byte[magic.length];
@@ -143,14 +146,15 @@ public class FileReader extends Reader {
 	}
 
 	private long readLines(FileState state, int spaceLeftInSpool) {
-		RandomAccessFile reader = state.getRandomAccessFile();
+		LogFile reader = state.getLogFile();
 		long pos = state.getPointer();
 		Multiline multiline = state.getMultiline();
+		if (spaceLeftInSpool < 1) return pos;
 		try {
 			reader.seek(pos);
 			byte[] line = readLine(reader);
 			bufferedLines.clear();
-			
+
 			if(multiline != null && multiline.isPrevious()) {
 				spaceLeftInSpool--;
 			}
@@ -201,7 +205,7 @@ public class FileReader extends Reader {
 						}
 					}
 				}
-				line = readLine(reader);
+				if (spaceLeftInSpool > 0) line = readLine(reader);
 			}
 			if(bufferedLines.position() > 0) {
 				addEvent(state, pos, extractBytes(bufferedLines)); // send any buffered lines left
@@ -213,7 +217,7 @@ public class FileReader extends Reader {
 		return pos;
 	}
 
-	private byte[] readLine(RandomAccessFile reader) throws IOException {
+	private byte[] readLine(LogFile reader) throws IOException {
 		byteBuffer.clear();
 		int ch;
 		boolean seenCR = false;
