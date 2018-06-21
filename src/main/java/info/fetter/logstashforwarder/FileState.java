@@ -17,7 +17,9 @@ package info.fetter.logstashforwarder;
  *
  */
 
+import info.fetter.logstashforwarder.util.LogFile;
 import info.fetter.logstashforwarder.util.RandomAccessFile;
+import info.fetter.logstashforwarder.util.NamedPipe;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -47,7 +49,7 @@ public class FileState {
 	@JsonIgnore
 	private boolean changed = false;
 	@JsonIgnore
-	private RandomAccessFile randomAccessFile;
+	private LogFile logFile;
 	private long pointer = 0;
 	@JsonIgnore
 	private FileState oldFileState;
@@ -67,7 +69,11 @@ public class FileState {
 		this.file = file;
 		directory = file.getCanonicalFile().getParent();
 		fileName = file.getName();
-		randomAccessFile = new RandomAccessFile(file.getPath(), "r");
+		if (file.isFile()) {
+			logFile = new RandomAccessFile(file.getPath(), "r");
+		} else {
+			logFile = new NamedPipe(file);
+		}
 		lastModified = file.lastModified();
 		size = file.length();
 	}
@@ -75,7 +81,7 @@ public class FileState {
 	private void setFileFromDirectoryAndName() throws FileNotFoundException {
 		file = new File(directory + File.separator + fileName);
 		if(file.exists()) {
-			randomAccessFile = null;
+			logFile = null;
 			lastModified = file.lastModified();
 			size = file.length();
 		} else {
@@ -141,8 +147,8 @@ public class FileState {
 		this.signature = signature;
 	}
 
-	public RandomAccessFile getRandomAccessFile() {
-		return randomAccessFile;
+	public LogFile getLogFile() {
+		return logFile;
 	}
 
 	public long getPointer() {
@@ -172,7 +178,7 @@ public class FileState {
 
 	public void deleteOldFileState() {
 		try {
-			oldFileState.getRandomAccessFile().close();
+			oldFileState.getLogFile().close();
 			oldFileState = null;
 		} catch(Exception e) {}
 	}

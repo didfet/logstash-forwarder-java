@@ -2,6 +2,7 @@ package info.fetter.logstashforwarder;
 
 /*
  * Copyright 2015 Didier Fetter
+ * Copyright 2017 Alberto González Palomo https://sentido-labs.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,7 +137,7 @@ public class FileWatcher {
 						logger.trace("Same signature size and value : file is the same");
 						continue;
 					} else if(oldState.getSignatureLength() < state.getSignatureLength()){
-						long signature = FileSigner.computeSignature(state.getRandomAccessFile(), oldState.getSignatureLength());
+						long signature = FileSigner.computeSignature(state.getLogFile(), oldState.getSignatureLength());
 						if(signature == oldState.getSignature()) {
 							state.setOldFileState(oldState);
 							logger.trace("Same signature : file is the same");
@@ -163,7 +164,7 @@ public class FileWatcher {
 							logger.trace("Same signature size and value : file is the same");
 							break;
 						} else if(otherState.getSignatureLength() < state.getSignatureLength()){
-							long signature = FileSigner.computeSignature(state.getRandomAccessFile(), otherState.getSignatureLength());
+							long signature = FileSigner.computeSignature(state.getLogFile(), otherState.getSignatureLength());
 							if(signature == otherState.getSignature()) {
 								state.setOldFileState(otherState);
 								logger.trace("Same signature : file is the same");
@@ -194,7 +195,7 @@ public class FileWatcher {
 						logger.debug("File " + state.getFile() + " has been replaced and not renamed, removing from watchMap");
 					}
 					try {
-						oldState.getRandomAccessFile().close();
+						oldState.getLogFile().close();
 					} catch(Exception e) {}
 					oldWatchMap.remove(state.getFile());
 				}
@@ -223,12 +224,33 @@ public class FileWatcher {
 		removeMarkedFilesFromWatchMap();
 	}
 
+	// This filter will accept anything that is not a directory,
+	// including named pipes (FIFOs), sockets and device files.
+	// The standard org.apache.commons.io.filefilter.FileFileFilter excludes
+	// them even if their documentation says
+	// "This filter accepts Files that are files (not directories)."
+	protected class FileFileFilter implements IOFileFilter
+	{
+		@Override
+		public boolean accept(File file) {
+			return !file.isDirectory();
+		}
+
+		@Override
+		public boolean accept(File dir, String name) {
+			return accept(new File(dir, name));
+		}
+	}
+	protected IOFileFilter fileFileFilter() {
+		return new FileFileFilter();
+	}
+
 	private void addSingleFile(String fileToWatch, Event fields, long deadTime, Multiline multiline, Filter filter) throws Exception {
 		logger.info("Watching file : " + new File(fileToWatch).getCanonicalPath());
 		String directory = FilenameUtils.getFullPath(fileToWatch);
 		String fileName = FilenameUtils.getName(fileToWatch);
 		IOFileFilter fileFilter = FileFilterUtils.and(
-				FileFilterUtils.fileFileFilter(),
+				fileFileFilter(),
 				FileFilterUtils.nameFileFilter(fileName),
 				new LastModifiedFileFilter(deadTime));
 		initializeWatchMap(new File(directory), fileFilter, fields, multiline, filter);
@@ -240,7 +262,7 @@ public class FileWatcher {
 		String wildcard = FilenameUtils.getName(filesToWatch);
 		logger.trace("Directory : " + new File(directory).getCanonicalPath() + ", wildcard : " + wildcard);
 		IOFileFilter fileFilter = FileFilterUtils.and(
-				FileFilterUtils.fileFileFilter(),
+				fileFileFilter(),
 				new WildcardFileFilter(wildcard),
 				new LastModifiedFileFilter(deadTime));
 		initializeWatchMap(new File(directory), fileFilter, fields, multiline, filter);
@@ -273,7 +295,7 @@ public class FileWatcher {
 			state.setFields(fields);
 			int signatureLength = (int) (state.getSize() > maxSignatureLength ? maxSignatureLength : state.getSize());
 			state.setSignatureLength(signatureLength);
-			long signature = FileSigner.computeSignature(state.getRandomAccessFile(), signatureLength);
+			long signature = FileSigner.computeSignature(state.getLogFile(), signatureLength);
 			state.setSignature(signature);
 			logger.trace("Setting signature of size : " + signatureLength + " on file : " + file + " : " + signature);
 			state.setMultiline(multiline);
@@ -331,7 +353,7 @@ public class FileWatcher {
 		List<File> markedList = null;
 		for(File file : oldWatchMap.keySet()) {
 			FileState state = oldWatchMap.get(file);
-			if(state.getRandomAccessFile() == null) {
+			if(state.getLogFile() == null) {
 				state.setDeleted();
 			}
 			if(state.isDeleted()) {
@@ -342,7 +364,7 @@ public class FileWatcher {
 					markedList.add(file);
 				}
 				try {
-					state.getRandomAccessFile().close();
+					state.getLogFile().close();
 				} catch(Exception e) {}
 			}
 		}
@@ -358,7 +380,7 @@ public class FileWatcher {
 		logger.debug("Closing all files");
 		for(File file : oldWatchMap.keySet()) {
 			FileState state = oldWatchMap.get(file);
-			state.getRandomAccessFile().close();
+			state.getLogFile().close();
 		}
 	}
 
