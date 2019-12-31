@@ -1,6 +1,5 @@
 # logstash-forwarder-java
 
-
 ## What is this ?
 
 Logstash-forwarder-java is a log shipper program written in java. This is in fact a java version of [logstash-forwarder](https://github.com/elasticsearch/logstash-forwarder) by jordansissel.
