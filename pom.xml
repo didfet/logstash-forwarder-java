@@ -81,6 +81,9 @@
 				<version>2.5.3</version>
 				<configuration>
 					<descriptor>src/assembly/tarball.xml</descriptor>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
 				</configuration>
 				<executions>
 					<execution>
@@ -166,5 +169,4 @@
 			<version>1.2</version>
 		</dependency>
 	</dependencies>
-
 </project>
