@@ -453,6 +453,10 @@ public class RandomAccessFile implements DataInput, DataOutput {
   public FileDescriptor getFD() throws IOException {
     return (file == null) ? null : file.getFD();
   }
+  
+  public boolean isEmpty() throws IOException {
+	  return length() == 0;
+  }
 
   /**
    * Copy the contents of the buffer to the disk.

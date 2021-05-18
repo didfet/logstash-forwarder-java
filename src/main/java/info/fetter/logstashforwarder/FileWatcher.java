@@ -70,14 +70,14 @@ public class FileWatcher {
 		printWatchMap();
 	}
 
-	public void addFilesToWatch(String fileToWatch, Event fields, long deadTime, Multiline multiline) {
+	public void addFilesToWatch(String fileToWatch, Event fields, long deadTime, Multiline multiline, Filter filter) {
 		try {
 			if(fileToWatch.equals("-")) {
 				addStdIn(fields);
 			} else if(fileToWatch.contains("*")) {
-				addWildCardFiles(fileToWatch, fields, deadTime, multiline);
+				addWildCardFiles(fileToWatch, fields, deadTime, multiline, filter);
 			} else {
-				addSingleFile(fileToWatch, fields, deadTime, multiline);
+				addSingleFile(fileToWatch, fields, deadTime, multiline, filter);
 			}
 		} catch(Exception e) {
 			throw new RuntimeException(e);
@@ -223,18 +223,18 @@ public class FileWatcher {
 		removeMarkedFilesFromWatchMap();
 	}
 
-	private void addSingleFile(String fileToWatch, Event fields, long deadTime, Multiline multiline) throws Exception {
+	private void addSingleFile(String fileToWatch, Event fields, long deadTime, Multiline multiline, Filter filter) throws Exception {
 		logger.info("Watching file : " + new File(fileToWatch).getCanonicalPath());
 		String directory = FilenameUtils.getFullPath(fileToWatch);
-		String fileName = FilenameUtils.getName(fileToWatch); 
+		String fileName = FilenameUtils.getName(fileToWatch);
 		IOFileFilter fileFilter = FileFilterUtils.and(
 				FileFilterUtils.fileFileFilter(),
 				FileFilterUtils.nameFileFilter(fileName),
 				new LastModifiedFileFilter(deadTime));
-		initializeWatchMap(new File(directory), fileFilter, fields, multiline);
+		initializeWatchMap(new File(directory), fileFilter, fields, multiline, filter);
 	}
 
-	private void addWildCardFiles(String filesToWatch, Event fields, long deadTime, Multiline multiline) throws Exception {
+	private void addWildCardFiles(String filesToWatch, Event fields, long deadTime, Multiline multiline, Filter filter) throws Exception {
 		logger.info("Watching wildcard files : " + filesToWatch);
 		String directory = FilenameUtils.getFullPath(filesToWatch);
 		String wildcard = FilenameUtils.getName(filesToWatch);
@@ -243,7 +243,7 @@ public class FileWatcher {
 				FileFilterUtils.fileFileFilter(),
 				new WildcardFileFilter(wildcard),
 				new LastModifiedFileFilter(deadTime));
-		initializeWatchMap(new File(directory), fileFilter, fields, multiline);
+		initializeWatchMap(new File(directory), fileFilter, fields, multiline, filter);
 	}
 
 	private void addStdIn(Event fields) {
@@ -252,22 +252,22 @@ public class FileWatcher {
 		stdinConfigured = true;
 	}
 
-	private void initializeWatchMap(File directory, IOFileFilter fileFilter, Event fields, Multiline multiline) throws Exception {
+	private void initializeWatchMap(File directory, IOFileFilter fileFilter, Event fields, Multiline multiline, Filter filter) throws Exception {
 		if(!directory.isDirectory()) {
 			logger.warn("Directory " + directory + " does not exist");
 			return;
 		}
 		FileAlterationObserver observer = new FileAlterationObserver(directory, fileFilter);
-		FileModificationListener listener = new FileModificationListener(this, fields, multiline);
+		FileModificationListener listener = new FileModificationListener(this, fields, multiline, filter);
 		observer.addListener(listener);
 		observerList.add(observer);
 		observer.initialize();
 		for(File file : FileUtils.listFiles(directory, fileFilter, null)) {
-			addFileToWatchMap(newWatchMap, file, fields, multiline);
+			addFileToWatchMap(newWatchMap, file, fields, multiline, filter);
 		}
 	}
 
-	private void addFileToWatchMap(Map<File,FileState> map, File file, Event fields, Multiline multiline) {
+	private void addFileToWatchMap(Map<File,FileState> map, File file, Event fields, Multiline multiline, Filter filter) {
 		try {
 			FileState state = new FileState(file);
 			state.setFields(fields);
@@ -276,28 +276,32 @@ public class FileWatcher {
 			long signature = FileSigner.computeSignature(state.getRandomAccessFile(), signatureLength);
 			state.setSignature(signature);
 			logger.trace("Setting signature of size : " + signatureLength + " on file : " + file + " : " + signature);
-                        state.setMultiline(multiline);
+			state.setMultiline(multiline);
+			state.setFilter(filter);
 			map.put(file, state);
 		} catch(IOException e) {
-			logger.error("Caught IOException : " + e.getMessage());
+			logger.error("Caught IOException in addFileToWatchMap : " +
+						 e.getMessage());
 		}
 	}
 
-	public void onFileChange(File file, Event fields, Multiline multiline) {
+	public void onFileChange(File file, Event fields, Multiline multiline, Filter filter) {
 		try {
 			logger.debug("Change detected on file : " + file.getCanonicalPath());
-			addFileToWatchMap(newWatchMap, file, fields, multiline);
+			addFileToWatchMap(newWatchMap, file, fields, multiline, filter);
 		} catch (IOException e) {
-			logger.error("Caught IOException : " + e.getMessage());
-		}	
+			logger.error("Caught IOException in onFileChange : " +
+						 e.getMessage());
+		}
 	}
 
-	public void onFileCreate(File file, Event fields, Multiline multiline) {
+	public void onFileCreate(File file, Event fields, Multiline multiline, Filter filter) {
 		try {
 			logger.debug("Create detected on file : " + file.getCanonicalPath());
-			addFileToWatchMap(newWatchMap, file, fields, multiline);
+			addFileToWatchMap(newWatchMap, file, fields, multiline, filter);
 		} catch (IOException e) {
-			logger.error("Caught IOException : " + e.getMessage());
+			logger.error("Caught IOException in onFileCreate : " +
+						 e.getMessage());
 		}
 	}
 
@@ -307,7 +311,8 @@ public class FileWatcher {
 			FileState state = oldWatchMap.get(file);
 			if (state != null) state.setDeleted();
 		} catch (IOException e) {
-			logger.error("Caught IOException : " + e.getMessage());
+			logger.error("Caught IOException in onFileDelete: " +
+						 e.getMessage());
 		}
 	}
 

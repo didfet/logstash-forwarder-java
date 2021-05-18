@@ -43,8 +43,8 @@ For help run :
 The configuration file is the same (json format), but there are a few differences :
   - the ssl ca parameter points to a java [keystore](https://github.com/didfet/logstash-forwarder-java/blob/master/HOWTO-KEYSTORE.md) containing the root certificate of the server, not a PEM file
   - comments are C-style comments
-  - multiline support with attributes "pattern", "negate" (true/false) and what (Previous/Next)
-
+  - multiline support with attributes "pattern", "negate" (true/false) and "what" (previous/next) (version 0.2.5)
+  - filtering support with attributes "pattern" and "negate" (true/false) (version 0.2.5)
 
 ### Command-line options
 

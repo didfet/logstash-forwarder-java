@@ -49,24 +49,24 @@ public class FileWatcherTest {
 	//@Test
 	public void testFileWatch() throws InterruptedException, IOException {
 		FileWatcher watcher = new FileWatcher();
-		watcher.addFilesToWatch("./test.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY, null);
+		watcher.addFilesToWatch("./test.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY, null, null);
 		for(int i = 0; i < 100; i++) {
 			Thread.sleep(1000);
 			watcher.checkFiles();
 		}
 	}
-        
-        //@Test
-        public void testFileWatchWithMultilines() throws InterruptedException, IOException {
+
+	//@Test
+	public void testFileWatchWithMultilines() throws InterruptedException, IOException {
 		FileWatcher watcher = new FileWatcher();
-                Multiline multiline = new Multiline();
-		watcher.addFilesToWatch("./test.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY, multiline);
+		Multiline multiline = new Multiline();
+		watcher.addFilesToWatch("./test.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY, multiline, null);
 		for(int i = 0; i < 100; i++) {
 			Thread.sleep(1000);
 			watcher.checkFiles();
 		}
 	}
-	
+
 	//@Test
 	public void testWildcardWatch() throws InterruptedException, IOException {
 		if(System.getProperty("os.name").toLowerCase().contains("win")) {
@@ -74,17 +74,17 @@ public class FileWatcherTest {
 			return;
 		}
 		FileWatcher watcher = new FileWatcher();
-		watcher.addFilesToWatch("./testFileWatcher*.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY, null);
+		watcher.addFilesToWatch("./testFileWatcher*.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY, null, null);
 		watcher.initialize();
 
 		File file1 = new File("testFileWatcher1.txt");
 		File file2 = new File("testFileWatcher2.txt");
 		//File file3 = new File("test3.txt");
 		//File file4 = new File("test4.txt");
-		
+
 		//File testDir = new File("testFileWatcher");
 		//FileUtils.forceMkdir(new File("test"));
-		
+
 		watcher.checkFiles();
 		Thread.sleep(100);
 		FileUtils.write(file1, "file 1 line 1\n", true);
@@ -101,17 +101,17 @@ public class FileWatcherTest {
 //
 		Thread.sleep(1000);
 		watcher.checkFiles();
-//		
-//		
+//
+//
 		watcher.close();
 		FileUtils.deleteQuietly(file1);
 		FileUtils.deleteQuietly(file2);
 //		FileUtils.forceDelete(testDir);
-		
-		
+
+
 
 	}
-        
+
         @Test
 	public void testWildcardWatchMultiline() throws InterruptedException, IOException {
 		if(System.getProperty("os.name").toLowerCase().contains("win")) {
@@ -123,17 +123,17 @@ public class FileWatcherTest {
                 m.put("pattern", " nl");
                 m.put("negate", "false");
                 Multiline multiline = new Multiline(m);
-		watcher.addFilesToWatch("./testFileWatcher*.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY, multiline);
+		watcher.addFilesToWatch("./testFileWatcher*.txt", new Event().addField("test", "test"), FileWatcher.ONE_DAY, multiline, null);
 		watcher.initialize();
 
 		File file1 = new File("testFileWatcher1.txt");
 		File file2 = new File("testFileWatcher2.txt");
 		//File file3 = new File("test3.txt");
 		//File file4 = new File("test4.txt");
-		
+
 		//File testDir = new File("testFileWatcher");
 		//FileUtils.forceMkdir(new File("test"));
-		
+
 		watcher.checkFiles();
 		Thread.sleep(100);
 		FileUtils.write(file1, "file 1 line 1\n nl line 1-2", true);
@@ -153,17 +153,17 @@ public class FileWatcherTest {
 //
 		Thread.sleep(1000);
 		watcher.checkFiles();
-//		
-//		
+//
+//
 		watcher.close();
 		FileUtils.deleteQuietly(file1);
 		FileUtils.deleteQuietly(file2);
 //		FileUtils.forceDelete(testDir);
-		
-		
+
+
 
 	}
-	
+
 	@Test
 	public void dummy() {}
 }

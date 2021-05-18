@@ -1,7 +1,7 @@
 package info.fetter.logstashforwarder;
 
 /*
- * Copyright 2015 Didier Fetter
+ * Copyright 2017 Alberto González Palomo http://sentido-labs.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,38 +22,33 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
-public class Multiline {
-	public enum WhatType { previous, next };
-	public static byte JOINT = (byte) '\n';
-
+public class Filter {
 	private Pattern pattern = null;
 	private boolean negate = false;
-	private WhatType what = WhatType.previous;
+	private String charset = "UTF-8";
 
-	public Multiline() {
+	public Filter() {
 	}
 
-	public Multiline(Multiline event) {
+	public Filter(Filter event) {
 		if(event != null) {
 			this.negate = event.negate;
 			this.pattern = event.pattern;
-			this.what = event.what;
 		}
 	}
 
-	public Multiline(Map<String,String> fields) throws UnsupportedEncodingException {
+	public Filter(Map<String,String> fields) throws UnsupportedEncodingException {
 		String strPattern = "";
 		for(String key : fields.keySet()) {
 			if ("pattern".equals(key))
 				strPattern = fields.get(key);
 			else if ("negate".equals(key))
 				negate = Boolean.parseBoolean(fields.get(key));
-			else if ("what".equals(key))
-				what = WhatType.valueOf(fields.get(key));
 			else
 				throw new UnsupportedEncodingException(key + " not supported");
 		}
 		pattern = Pattern.compile(strPattern);
+
 	}
 
 	public Pattern getPattern() {
@@ -64,30 +59,30 @@ public class Multiline {
 		return negate;
 	}
 
-	public WhatType getWhat() {
-		return what;
+	public boolean accept (byte[] line) {
+		try {
+			return accept(new String(line, charset));
+		} catch (UnsupportedEncodingException e) {
+			System.err.println("ERROR: unsupported encoding " + charset);
+			System.err.flush();// In case we crash at new String(line),
+			// because the behaviour if the bytes are not decodable with
+			// the platform's default encoding is undefined.
+			// Last ditch effort, decode with the platform's encoding:
+			return accept(new String(line));
+		}
 	}
 
-	public boolean isPrevious() {
-		return what == WhatType.previous;
-	}
-
-	public boolean isPatternFound (byte[] line) {
-		boolean result = pattern.matcher(new String(line)).find();
+	public boolean accept (String line) {
+		boolean result = pattern.matcher(line).find();
 		if (negate) return !result;
 		return result;
 	}
 
 	@Override
 	public String toString() {
-		return new StringBuilder()
-			.append("[pattern=")
-			.append(pattern)
-			.append(",negate=")
-			.append(negate)
-			.append(",what=")
-			.append(what)
-			.append("]")
-			.toString();
+		return new ToStringBuilder(this).
+			append("pattern", pattern).
+			append("negate", negate).
+			toString();
 	}
 }
