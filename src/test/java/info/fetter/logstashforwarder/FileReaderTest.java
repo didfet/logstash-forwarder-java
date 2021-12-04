@@ -72,17 +72,18 @@ public class FileReaderTest {
 		assertEquals(2, reader.readFiles(fileList));
 		assertEquals(1, reader.readFiles(fileList));
 		assertEquals(0, reader.readFiles(fileList));
-		//FileUtils.forceDelete(file1);
+		FileUtils.forceDelete(file1);
 	}
         
-        @Test
+	@Test
 	public void testFileReader2() throws IOException, InterruptedException, AdapterException {
 		FileReader reader = new FileReader(2);
 		reader.setAdapter(new MockProtocolAdapter());
 		List<FileState> fileList = new ArrayList<FileState>(1);
 		File file1 = new File("testFileReader1.txt");
 		FileUtils.write(file1, "testFileReader1 line1\n");
-                FileUtils.write(file1, " nl line12\n", true);
+		FileUtils.write(file1, " nl line12\n", true);
+		FileUtils.write(file1, " nl line13\n", true);
 		FileUtils.write(file1, "testFileReader1 line2\n", true);
 		FileUtils.write(file1, "testFileReader1 line3\n", true);
 		Thread.sleep(500);
@@ -96,6 +97,109 @@ public class FileReaderTest {
 		assertEquals(2, reader.readFiles(fileList));
 		assertEquals(1, reader.readFiles(fileList));
 		assertEquals(0, reader.readFiles(fileList));
-		//FileUtils.forceDelete(file1);
+		FileUtils.forceDelete(file1);
+	}
+
+	@Test
+	public void testFileReader3() throws IOException, InterruptedException, AdapterException {
+		FileReader reader = new FileReader(2);
+		reader.setAdapter(new MockProtocolAdapter());
+		List<FileState> fileList = new ArrayList<FileState>(1);
+		File file1 = new File("testFileReader1.txt");
+		FileUtils.write(file1, "1234 line1\n");
+		FileUtils.write(file1, " nl line12\n", true);
+		FileUtils.write(file1, " nl line13\n", true);
+		FileUtils.write(file1, "2345 line2\n", true);
+		FileUtils.write(file1, "5524 line3\n", true);
+		FileUtils.write(file1, "7478 line4\n", true);
+		FileUtils.write(file1, " nl line42\n", true);
+		FileUtils.write(file1, "8234 line5\n", true);
+		FileUtils.write(file1, " nl line52\n", true);
+		Thread.sleep(500);
+		FileState state = new FileState(file1);
+		fileList.add(state);
+		state.setFields(new Event().addField("testFileReader1", "testFileReader1"));
+		Map<String, String> m = new HashMap<String, String>();
+		m.put("pattern", "^[0-9]{4}");
+		m.put("negate", "true");
+		state.setMultiline(new Multiline(m));
+		assertEquals(2, reader.readFiles(fileList));
+		assertEquals(2, reader.readFiles(fileList));
+		assertEquals(1, reader.readFiles(fileList));
+		assertEquals(0, reader.readFiles(fileList));
+		FileUtils.forceDelete(file1);
+	}
+
+	@Test
+	public void testFileReader4() throws IOException, InterruptedException, AdapterException {
+		FileReader reader = new FileReader(2);
+		reader.setAdapter(new MockProtocolAdapter());
+		List<FileState> fileList = new ArrayList<FileState>(1);
+		File file1 = new File("testFileReader1.txt");
+		FileUtils.write(file1, "1234 line1\n");
+		FileUtils.write(file1, " nl line12\n", true);
+		FileUtils.write(file1, "8234 line5\n", true);
+		FileUtils.write(file1, " nl line52\n", true);
+		Thread.sleep(500);
+		FileState state = new FileState(file1);
+		fileList.add(state);
+		state.setFields(new Event().addField("testFileReader1", "testFileReader1"));
+		Map<String, String> m = new HashMap<String, String>();
+		m.put("pattern", "^[0-9]{4}");
+		m.put("negate", "true");
+		state.setMultiline(new Multiline(m));
+		assertEquals(2, reader.readFiles(fileList));
+		assertEquals(0, reader.readFiles(fileList));
+		FileUtils.forceDelete(file1);
+	}
+
+	@Test
+	public void testFileReader5() throws IOException, InterruptedException, AdapterException {
+		FileReader reader = new FileReader(2);
+		reader.setAdapter(new MockProtocolAdapter());
+		List<FileState> fileList = new ArrayList<FileState>(1);
+		File file1 = new File("testFileReader1.txt");
+		FileUtils.write(file1, "testFileReader1 line1\n");
+		FileUtils.write(file1, "testFileReader1 line2\n", true);
+		FileUtils.write(file1, "testFileReader1 line3\n", true);
+		Thread.sleep(500);
+		FileState state = new FileState(file1);
+		fileList.add(state);
+		state.setFields(new Event().addField("testFileReader1", "testFileReader1"));
+		assertEquals(2, reader.readFiles(fileList));
+		assertEquals(1, reader.readFiles(fileList));
+		assertEquals(0, reader.readFiles(fileList));
+		FileUtils.forceDelete(file1);
+	}
+
+	@Test
+	public void testFileReader6() throws IOException, InterruptedException, AdapterException {
+		FileReader reader = new FileReader(100);
+		reader.setAdapter(new MockProtocolAdapter());
+		List<FileState> fileList = new ArrayList<FileState>(1);
+		File file1 = new File("testFileReader6.txt");
+		FileUtils.write(file1, "0000 line1\n");
+		for (int i=0; i<700; i+=7) {
+			FileUtils.write(file1, String.format("%04d line\n", i), true);
+			FileUtils.write(file1, String.format(" nl line%04d\n", i+1), true);
+			FileUtils.write(file1, String.format("%04d line\n", i+2), true);
+			FileUtils.write(file1, String.format("%04d line\n", i+3), true);
+			FileUtils.write(file1, String.format("%04d line\n", i+4), true);
+			FileUtils.write(file1, String.format(" nl line%04d\n", i+5), true);
+			FileUtils.write(file1, String.format(" nl line%04d\n", i+6), true);
+		}
+		Thread.sleep(500);
+		FileState state = new FileState(file1);
+		fileList.add(state);
+		state.setFields(new Event().addField("testFileReader6", "testFileReader6"));
+		Map<String, String> m = new HashMap<String, String>();
+		m.put("pattern", "^[0-9]{4}");
+		m.put("negate", "true");
+		state.setMultiline(new Multiline(m));
+		for (int i=0; i<4; i++)
+			assertEquals(100, reader.readFiles(fileList));
+		assertEquals(1, reader.readFiles(fileList));
+		assertEquals(0, reader.readFiles(fileList));
+		FileUtils.forceDelete(file1);
 	}
 }

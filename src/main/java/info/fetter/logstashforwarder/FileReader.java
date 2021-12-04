@@ -151,14 +151,12 @@ public class FileReader extends Reader {
 			byte[] line = readLine(reader);
 			bufferedLines.clear();
 
-			if(multiline != null && multiline.isPrevious()) {
-				spaceLeftInSpool--;
-			}
 			while (line != null && spaceLeftInSpool > 0) {
 				if(logger.isDebugEnabled()) {
 					logger.debug("-- Read line : " + new String(line));
 					logger.debug("-- Space left in spool : " + spaceLeftInSpool);
 				}
+				long prevPos = pos;
 				pos = reader.getFilePointer();
 				if(multiline == null) {
 					addEvent(state, pos, line);
@@ -179,10 +177,13 @@ public class FileReader extends Reader {
 						if(multiline.isPrevious()) {
 							// did not match, so new event started
 							if (bufferedLines.position() > 0) {
-								addEvent(state, pos, extractBytes(bufferedLines));
+								addEvent(state, prevPos, extractBytes(bufferedLines));
 								spaceLeftInSpool--;
 							}
-							copyLineToBuffer(line, bufferedLines);
+							if (spaceLeftInSpool > 0)
+								copyLineToBuffer(line, bufferedLines);
+							else
+								pos = prevPos;
 						}
 						else {
 							// did not match, add the current line
@@ -192,12 +193,11 @@ public class FileReader extends Reader {
 								}
 								copyLineToBuffer(line, bufferedLines);
 								addEvent(state, pos, extractBytes(bufferedLines));
-								spaceLeftInSpool--;
 							}
 							else {
 								addEvent(state, pos, line);
-								spaceLeftInSpool--;
 							}
+							spaceLeftInSpool--;
 						}
 					}
 				}
